@@ -1,0 +1,7 @@
+# Runtime dependencies for the PA-LCP-Tool cost-projection engine.
+# Pinned to lower bounds; install with: python -m pip install -r requirements.txt
+openpyxl>=3.1
+PyYAML>=6.0
+
+# Development / test (optional):
+# pytest>=7.4

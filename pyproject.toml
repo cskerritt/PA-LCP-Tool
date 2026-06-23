@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "palcp"
+version = "0.1.0"
+description = "Life Care Plan cost-projection engine and Excel report generator built for forensic (Daubert / FRE 702) defensibility."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Christopher Skerritt" }]
+keywords = [
+    "life care plan",
+    "forensic economics",
+    "cost projection",
+    "present value",
+    "daubert",
+    "FRE 702",
+]
+dependencies = [
+    "openpyxl>=3.1",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+]
+
+[project.scripts]
+palcp = "palcp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+palcp = ["data/*.csv", "data/*.yaml", "data/templates/*.csv", "data/templates/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

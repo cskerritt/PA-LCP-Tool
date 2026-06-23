@@ -1,0 +1,5 @@
+source,code,code_type,description,amount,percentile,geographic_area,effective_date,citation_url
+VA Reasonable Charges,72148,CPT,"MRI lumbar spine without contrast",1185,,National,2026,https://www.va.gov/COMMUNITYCARE/revenue_ops/Reasonable_Charges.asp
+CMS DMEPOS Fee Schedule,K0005,HCPCS,"Ultralightweight manual wheelchair",2480,,PA,2026,https://www.cms.gov/medicare/payment/fee-schedules/dmepos-fee-schedule
+CMS DMEPOS Fee Schedule,A4595,HCPCS,"TENS supplies, per month",30,,PA,2026,https://www.cms.gov/medicare/payment/fee-schedules/dmepos-fee-schedule
+VA Reasonable Charges,99214,CPT,"Office/outpatient visit, established patient",198,,National,2026,https://www.va.gov/COMMUNITYCARE/revenue_ops/Reasonable_Charges.asp
