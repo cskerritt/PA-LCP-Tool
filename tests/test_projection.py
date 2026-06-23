@@ -123,19 +123,65 @@ def test_frequency_active_band():
     assert all(v == 10 for v in occ if v)
 
 
-def test_partial_final_year_proration(base_growth_rates):
+def _plan(items, additional_years, base_growth_rates, *, timing="mid_year",
+          discount=0.0, age=50):
     from palcp.models import Claimant, DiscountRate, LifeExpectancy, Plan
+    return Plan(
+        claimant=Claimant(age_at_report=age),
+        life_expectancy=LifeExpectancy(age_at_report=age,
+                                       additional_years=additional_years),
+        discount_rate=DiscountRate(annual_rate=discount, timing=timing),
+        growth_rates=base_growth_rates,
+        items=items,
+    )
+
+
+def test_partial_final_year_proration(base_growth_rates):
     item = CareItem(category="c", item="x", unit_cost=100,
                     frequency_per_year=1, growth_key="general")
-    plan = Plan(
-        claimant=Claimant(age_at_report=50),
-        life_expectancy=LifeExpectancy(age_at_report=50, additional_years=3.5),
-        discount_rate=DiscountRate(annual_rate=0.0, timing="mid_year"),
-        growth_rates=base_growth_rates,
-        items=[item],
-    )
-    res = project(plan)
+    res = project(_plan([item], 3.5, base_growth_rates))
     # 3 full years (weight 1) + 1 partial (weight 0.5) = 3.5 occurrences * $100.
     assert res.item_results[0].current_total == pytest.approx(350.0)
     assert len(res.year_results) == 4
     assert res.year_results[-1].weight == pytest.approx(0.5)
+
+
+def test_one_time_event_full_cost_in_partial_final_year(base_growth_rates):
+    """A discrete one-time event in the partial final year is NOT prorated."""
+    item = CareItem(category="c", item="surgery", unit_cost=10000,
+                    one_time=True, one_time_age=52.3, growth_key="general")
+    res = project(_plan([item], 2.5, base_growth_rates, age=50))
+    ir = res.item_results[0]
+    assert ir.current_total == pytest.approx(10000.0)  # full, not 5000
+    assert ir.occurrences_total == pytest.approx(1.0)  # whole, not 0.5
+
+
+def test_every_n_years_full_cost_in_partial_final_year(base_growth_rates):
+    item = CareItem(category="c", item="wheelchair", unit_cost=8000,
+                    every_n_years=2, start_age=50, growth_key="general")
+    res = project(_plan([item], 2.5, base_growth_rates, age=50))
+    ir = res.item_results[0]
+    # Replacements at age 50 and 52 (the partial year), both at full cost.
+    assert ir.current_total == pytest.approx(16000.0)
+    assert ir.occurrences_total == pytest.approx(2.0)
+
+
+def test_one_time_at_exact_terminal_age_fires(base_growth_rates):
+    item = CareItem(category="c", item="surgery", unit_cost=5000,
+                    one_time=True, one_time_age=52.0, growth_key="general")
+    # Whole-number LE: ages_start = [50, 51], terminal age = 52.
+    res = project(_plan([item], 2.0, base_growth_rates, age=50))
+    assert res.item_results[0].current_total == pytest.approx(5000.0)
+
+
+def test_partial_year_time_exponent_within_window(base_growth_rates):
+    """The lone partial year's discount factor uses exponent offset*frac."""
+    item = CareItem(category="c", item="x", unit_cost=100,
+                    frequency_per_year=1, growth_key="general")
+    d = 0.05
+    res = project(_plan([item], 0.5, base_growth_rates, timing="mid_year",
+                        discount=d))
+    yr = res.year_results[0]
+    assert yr.weight == pytest.approx(0.5)
+    # mid_year offset 0.5 scaled by weight 0.5 -> exponent 0.25
+    assert yr.discount_factor == pytest.approx(1.0 / (1.0 + d) ** 0.25)

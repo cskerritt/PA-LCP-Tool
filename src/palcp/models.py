@@ -84,10 +84,10 @@ class DiscountRate:
 class LifeExpectancy:
     """The duration-of-care multiplier for the whole plan.
 
-    Per IALCP methodology and the *Anderson-Moody* / *Gunn* line of cases, a
-    non-physician life-care planner does **not** independently reduce life
-    expectancy; a reduced figure must come from a qualified medical/mortality
-    opinion.  ``note`` should record which applies.
+    Per IALCP methodology and the medical-foundation case law, a non-physician
+    life-care planner does **not** independently reduce life expectancy; a
+    reduced figure must come from a qualified medical/mortality opinion.
+    ``note`` should record which applies.
     """
 
     age_at_report: float
@@ -133,9 +133,9 @@ class CareItem:
     resolved from a :class:`~palcp.pricing.schema.PricingTable` by ``code``.
 
     ``medical_foundation`` is the citation tying the item to a treating
-    physician/record (e.g. "Dr. Chhatre IME 5/7/2025, p.14").  Items lacking it
-    are flagged by the validator -- this is the single most common ground for
-    *Daubert* exclusion (*Gunn v. Atchison*, *Anderson-Moody v. Wilson*).
+    physician/record (e.g. "Treating physiatrist, IME 5/7/2025, p.14").  Items
+    lacking it are flagged by the validator -- absence of a treating-provider
+    foundation is among the most common grounds for *Daubert* exclusion.
     """
 
     category: str

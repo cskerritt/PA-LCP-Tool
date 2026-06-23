@@ -23,7 +23,43 @@ def test_missing_medical_foundation_warns(simple_plan):
     plan.items[0].medical_foundation = ""
     report = validate_plan(plan)
     assert any("medical foundation" in m.lower() for m in _messages(report))
-    assert any(f.domain == "Medical Foundation" for f in report.warnings)
+    # Retagged to one of the six canonical peer-review domains.
+    assert any(f.domain == "Standards of Practice" for f in report.warnings)
+
+
+SIX_DOMAINS = {
+    "Jurisdiction/System Rules", "Best Practices", "Ethical Guidelines",
+    "Standards of Practice", "Transparency", "Findings/Conclusions",
+}
+
+
+def test_all_finding_domains_are_canonical(simple_plan):
+    """Every emitted domain must be one of the six documented domains."""
+    plan = copy.deepcopy(simple_plan)
+    plan.items[0].medical_foundation = ""
+    plan.items[0].geographic_basis = ""
+    plan.discount_rate.basis = "real"
+    report = validate_plan(plan)
+    assert report.findings  # ensure we actually exercised several checks
+    for f in report.findings:
+        assert f.domain in SIX_DOMAINS, f.domain
+
+
+def test_placeholder_growth_source_warns(simple_plan):
+    plan = copy.deepcopy(simple_plan)
+    plan.growth_rates["medical_services"].source = (
+        "PLACEHOLDER - confirm against current published data"
+    )
+    report = validate_plan(plan)
+    assert any("placeholder" in m.lower() for m in _messages(report))
+
+
+def test_fractional_every_n_years_warns(simple_plan):
+    plan = copy.deepcopy(simple_plan)
+    plan.items[0].frequency_per_year = None
+    plan.items[0].every_n_years = 2.5
+    report = validate_plan(plan)
+    assert any("every_n_years" in m for m in _messages(report))
 
 
 def test_zero_unit_cost_is_error(simple_plan):

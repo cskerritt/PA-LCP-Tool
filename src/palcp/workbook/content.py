@@ -56,12 +56,15 @@ METHODOLOGY_SECTIONS: list[tuple[str, list[str]]] = [
         "4. Medical Foundation",
         [
             "Every recommended good or service is tied to a treating-provider recommendation or "
-            "the medical record (Consensus Statement 64; IALCP Standard 3.3). A non-physician "
-            "planner does not supply independent medical opinions.",
-            "This requirement reflects the controlling case law: plans built on templates or the "
-            "planner's own unsupported beliefs have been excluded (Gunn v. Atchison), as has care "
-            "not recommended by the treating providers (Anderson-Moody v. Wilson). The Medical "
-            "Foundation tab documents the basis for each item and flags any gaps.",
+            "the medical record (consistent with Consensus Statement 64 and the IALCP Standards of "
+            "Practice, 4th ed.). A non-physician planner does not supply independent medical "
+            "opinions.",
+            "This reflects the consistent thrust of the case law: courts have excluded life care "
+            "plans built on templates or the planner's own unsupported beliefs rather than the "
+            "treating record, and have disallowed projected care that no treating physician or "
+            "qualified medical expert recommended. The Medical Foundation tab documents the basis "
+            "for each item and flags any gaps. Controlling authority varies by jurisdiction; "
+            "counsel should cite the governing cases in the expert's report.",
         ],
     ),
     (
@@ -160,3 +163,44 @@ SOURCE_DESCRIPTIONS: dict[str, dict[str, str]] = {
         "url": "https://www.federalreserve.gov/releases/h15/",
     },
 }
+
+
+# Free-text pricing-source labels on items (e.g. "MFUS 80th %ile") rarely equal
+# a canonical SOURCE_DESCRIPTIONS key. Map common label fragments to the
+# canonical key so the Data Sources tab can attach the right citation URL.
+SOURCE_ALIASES: dict[str, str] = {
+    "mfus": "Medical Fees in the United States (Context4/PMIC)",
+    "medical fees": "Medical Fees in the United States (Context4/PMIC)",
+    "context4": "Medical Fees in the United States (Context4/PMIC)",
+    "pmic": "Medical Fees in the United States (Context4/PMIC)",
+    "wasserman": "Yale Wasserman",
+    "va reasonable": "VA Reasonable Charges",
+    "dmepos": "CMS DMEPOS Fee Schedule",
+    "genworth": "Genworth Cost of Care Survey",
+    "american hospital": "American Hospital Directory (AHD)",
+    "ahd": "American Hospital Directory (AHD)",
+    "goodrx": "GoodRx",
+    "fair health": "FAIR Health",
+    "treasury": "U.S. Treasury Constant Maturity (H.15)",
+}
+
+
+def canonical_source(label: str) -> str:
+    """Resolve a free-text source label to a canonical SOURCE_DESCRIPTIONS key.
+
+    Returns the matched key, or "" if nothing matches.
+    """
+    if not label:
+        return ""
+    if label in SOURCE_DESCRIPTIONS:
+        return label
+    low = label.lower()
+    for fragment, key in SOURCE_ALIASES.items():
+        if fragment in low:
+            return key
+    return ""
+
+
+def citation_url_for(label: str) -> str:
+    """Best-effort citation URL for a free-text pricing-source label."""
+    return SOURCE_DESCRIPTIONS.get(canonical_source(label), {}).get("url", "")

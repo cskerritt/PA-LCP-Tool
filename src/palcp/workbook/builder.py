@@ -30,7 +30,7 @@ from ..economics.projection import ProjectionResult
 from ..models import Plan
 from ..validate import ValidationReport
 from . import styles as S
-from .content import METHODOLOGY_SECTIONS, SOURCE_DESCRIPTIONS
+from .content import METHODOLOGY_SECTIONS, SOURCE_DESCRIPTIONS, citation_url_for
 
 
 def _kv(ws: Worksheet, row: int, label: str, value, *, value_is_money=False,
@@ -113,8 +113,7 @@ def _cover(wb: Workbook, result: ProjectionResult, version: str, generated_on: s
         "their foundation are addressed on the Medical Foundation tab and remain "
         "the responsibility of the qualified clinician(s) of record."
     ).format(v=version, d=generated_on)
-    row = S.note(ws, row, disclaimer, ncols=2)
-    ws.row_dimensions[row - 1].height = 90
+    row = S.note(ws, row, disclaimer, ncols=2)  # note() now sizes the row itself
     S.page_setup(ws, landscape=False)
 
 
@@ -235,7 +234,9 @@ def _current_cost(wb: Workbook, result: ProjectionResult) -> None:
             S.money(ws.cell(row=row, column=11, value=round(r.current_total, 2)))
             cat_total += r.current_total
             row += 1
-        # Category subtotal.
+        # Category subtotal (continuous top rule across the table width).
+        for cc in range(1, 12):
+            ws.cell(row=row, column=cc).border = S.BORDER_TOP
         sc = ws.cell(row=row, column=10, value=f"{cat} subtotal")
         sc.font = S.BODY_BOLD
         sc.alignment = S.RIGHT
@@ -246,6 +247,8 @@ def _current_cost(wb: Workbook, result: ProjectionResult) -> None:
         row += 1
 
     # Grand total.
+    for cc in range(1, 12):
+        ws.cell(row=row, column=cc).border = S.BORDER_TOP_DOUBLE
     gc = ws.cell(row=row, column=10, value="LIFETIME TOTAL (undiscounted)")
     gc.font = S.BODY_BOLD
     gc.alignment = S.RIGHT
@@ -303,6 +306,8 @@ def _pv_projection(wb: Workbook, result: ProjectionResult) -> None:
             sub_nom += r.nominal_total
             sub_pv += r.present_value
             row += 1
+        for cc in range(1, 10):
+            ws.cell(row=row, column=cc).border = S.BORDER_TOP
         lc = ws.cell(row=row, column=6, value=f"{cat} subtotal")
         lc.font = S.BODY_BOLD
         lc.alignment = S.RIGHT
@@ -313,6 +318,8 @@ def _pv_projection(wb: Workbook, result: ProjectionResult) -> None:
             cc.border = S.BORDER_TOP
         row += 1
 
+    for cc in range(1, 10):
+        ws.cell(row=row, column=cc).border = S.BORDER_TOP_DOUBLE
     gc = ws.cell(row=row, column=6, value="LIFETIME TOTAL")
     gc.font = S.BODY_BOLD
     gc.alignment = S.RIGHT
@@ -372,7 +379,9 @@ def _annual_schedule(wb: Workbook, result: ProjectionResult) -> None:
                 ws.cell(row=row, column=cc).fill = S.BAND_FILL
         row += 1
 
-    # Total row (nominal + PV).
+    # Total row (nominal + PV). Draw a continuous top rule across the full width.
+    for cc in range(1, len(headers) + 1):
+        ws.cell(row=row, column=cc).border = S.BORDER_TOP
     tc = ws.cell(row=row, column=3, value="TOTAL")
     tc.font = S.BODY_BOLD
     tc.alignment = S.RIGHT
@@ -513,8 +522,8 @@ def _data_sources(wb: Workbook, result: ProjectionResult) -> None:
         ws.cell(row=row, column=4, value="; ".join(a["items"])).alignment = S.LEFT_WRAP
         ws.cell(row=row, column=5, value=", ".join(sorted(a["dates"])) or "—"
                 ).alignment = S.LEFT_WRAP
-        cite = SOURCE_DESCRIPTIONS.get(src, {}).get("url", "")
-        ws.cell(row=row, column=6, value=cite).alignment = S.LEFT_WRAP
+        cite = citation_url_for(src)
+        ws.cell(row=row, column=6, value=cite or "—").alignment = S.LEFT_WRAP
         row += 1
 
     row += 1
@@ -571,8 +580,8 @@ def _medical_foundation(wb: Workbook, result: ProjectionResult) -> None:
     S.set_widths(ws, [24, 32, 50, 14])
     row = S.title_block(
         ws, "Medical Foundation Index",
-        "Each item's basis in a treating-provider recommendation or record "
-        "(Gunn; Anderson-Moody)", ncols=4)
+        "Each item's basis in a treating-provider recommendation or the "
+        "medical record", ncols=4)
     S.header_row(ws, row, ["Category", "Item", "Medical foundation", "Status"])
     header_at = row
     row += 1

@@ -77,13 +77,20 @@ direct `unit_cost` (e.g. a vendor survey) keep it.
 ## Library use
 
 ```python
-from palcp import load_plan, project, validate_plan, save_workbook
+from palcp import (load_plan, load_pricing, apply_pricing,
+                   validate_plan, project, save_workbook)
 
-plan   = load_plan("assumptions.yaml", "plan_items.csv")
+plan = load_plan("assumptions.yaml", "plan_items.csv")
+
+# Optional: price any items that carry a code but no direct unit_cost.
+apply_pricing(plan.items, load_pricing("pricing.csv"))
+
 report = validate_plan(plan)        # Daubert pre-flight
 result = project(plan)              # the cost projection
 save_workbook(result, report, "life_care_plan.xlsx")
 ```
+
+(Skip the `apply_pricing` line if every item already carries a `unit_cost`.)
 
 ---
 
@@ -103,9 +110,11 @@ formulas appear on the workbook's Assumptions tab and in
 
 The tool is organized around the six life-care-plan peer-review domains and the
 *Daubert* factors. The **Validation** tab/command checks for the specific
-failures that recur in exclusion case law — missing medical foundation
-(*Gunn v. Atchison*; *Anderson-Moody v. Wilson*), inconsistent ("cherry-picked")
-cost percentiles, un-sourced or undated pricing, and speculative durations. See
+failures that recur in exclusion case law — missing medical foundation,
+inconsistent ("cherry-picked") cost percentiles, un-sourced or undated pricing,
+and speculative durations. (The generated workbook states these as general
+principles; verify the controlling authority for your jurisdiction in the
+expert's own report.) See
 [`docs/DEFENSIBILITY.md`](docs/DEFENSIBILITY.md).
 
 ## Bringing your own pricing data

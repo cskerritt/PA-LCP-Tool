@@ -6,9 +6,11 @@ under *Daubert v. Merrell Dow* and Federal Rule of Evidence 702.
 
 Typical use::
 
-    from palcp import load_plan, project, validate_plan, save_workbook
+    from palcp import (load_plan, load_pricing, apply_pricing,
+                       validate_plan, project, save_workbook)
 
     plan = load_plan("assumptions.yaml", "plan_items.csv")
+    apply_pricing(plan.items, load_pricing("pricing.csv"))  # if pricing by code
     report = validate_plan(plan)
     result = project(plan)
     save_workbook(result, report, "life_care_plan.xlsx")

@@ -44,15 +44,18 @@ def _print_validation(report) -> None:
 def _load_pricing_arg(path_args: list[str] | None):
     if not path_args:
         return None
-    from .pricing import PricingTable
+    from .pricing import PRESETS, PricingTable
 
     table = PricingTable()
     for spec in path_args:
-        # Allow "path" or "path:preset".
-        if ":" in spec and not Path(spec).exists():
-            path, preset = spec.rsplit(":", 1)
-        else:
-            path, preset = spec, None
+        # Allow "path" or "path:preset". A trailing ":token" is only treated as
+        # a preset when token is a known preset key, so Windows drive-letter
+        # paths (e.g. C:/fees.xlsx) and URL-like paths are not mis-split.
+        path, preset = spec, None
+        if ":" in spec:
+            candidate_path, candidate_preset = spec.rsplit(":", 1)
+            if candidate_preset in PRESETS:
+                path, preset = candidate_path, candidate_preset
         table.extend(load_pricing(path, preset=preset).records)
     return table
 

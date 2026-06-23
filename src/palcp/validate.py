@@ -1,11 +1,12 @@
 """Daubert / FRE 702 pre-flight validation.
 
-The case law on excluded life care plans is remarkably consistent about *why*
-plans fail: no medical foundation for an item (*Gunn v. Atchison*,
-*Anderson-Moody v. Wilson*), inconsistent / "cherry-picked" cost percentiles,
-un-sourced or undated pricing, and speculative durations.  This module walks a
-:class:`~palcp.models.Plan` and reports those exact defects *before* a workbook
-is generated, mapped to the six peer-review domains (Barros-Bailey et al.).
+The published critiques of excluded life care plans are remarkably consistent
+about *why* plans fail: no medical foundation for an item, inconsistent /
+"cherry-picked" cost percentiles, un-sourced or undated pricing, and speculative
+durations.  This module walks a :class:`~palcp.models.Plan` and reports those
+exact defects *before* a workbook is generated, organized under the six
+peer-review domains the tool uses (Jurisdiction/System Rules, Best Practices,
+Ethical Guidelines, Standards of Practice, Transparency, Findings/Conclusions).
 
 It does not block generation -- a planner may have a documented reason -- but
 every finding is surfaced on the workbook's Validation tab and on the console so
@@ -19,6 +20,17 @@ from typing import Optional
 
 from .models import CareItem, Plan
 
+
+def _source_missing(source: str) -> bool:
+    """A source is treated as missing if it is blank OR still a placeholder.
+
+    Default seed rates carry a ``PLACEHOLDER`` source; they must be flagged
+    until replaced with a cited figure, or the workbook would assert that a
+    placeholder rate was vetted.
+    """
+    s = (source or "").strip()
+    return s == "" or s.upper().startswith("PLACEHOLDER")
+
 ERROR = "ERROR"
 WARN = "WARN"
 INFO = "INFO"
@@ -29,7 +41,7 @@ _SEVERITY_ORDER = {ERROR: 0, WARN: 1, INFO: 2}
 @dataclass
 class Finding:
     severity: str  # ERROR | WARN | INFO
-    domain: str  # peer-review domain, e.g. "Medical Foundation"
+    domain: str  # peer-review domain, e.g. "Standards of Practice"
     message: str
     item: Optional[str] = None  # care item name, when item-specific
 
@@ -86,29 +98,43 @@ def validate_plan(plan: Plan) -> ValidationReport:
     """Run all checks and return a :class:`ValidationReport`."""
     f: list[Finding] = []
 
+    # ---- Jurisdiction / system rules ------------------------------------ #
+    if not plan.jurisdiction:
+        f.append(Finding(INFO, "Jurisdiction/System Rules",
+                         "No jurisdiction / evidentiary standard recorded "
+                         "(e.g. the court and whether Daubert or Frye applies)."))
+    if not plan.collateral_source_note:
+        f.append(Finding(INFO, "Jurisdiction/System Rules",
+                         "No collateral-source / billed-vs-paid note recorded; "
+                         "this treatment varies by jurisdiction and should be "
+                         "stated."))
+
     # ---- Plan-level economic foundation --------------------------------- #
     le = plan.life_expectancy
     if le.additional_years is None or le.additional_years <= 0:
         f.append(Finding(ERROR, "Findings/Conclusions",
                          "Life expectancy (additional years) must be positive."))
-    if not le.source:
+    if _source_missing(le.source):
         f.append(Finding(WARN, "Transparency",
                          "Life expectancy has no cited source. Cite the life "
                          "table or medical/mortality opinion relied upon."))
-    if not plan.discount_rate.source:
+    if _source_missing(plan.discount_rate.source):
         f.append(Finding(WARN, "Transparency",
-                         "Discount rate has no cited source (e.g. U.S. Treasury "
-                         "constant-maturity yield as of the report date)."))
+                         "Discount rate has no cited source / is a placeholder "
+                         "(e.g. U.S. Treasury constant-maturity yield as of the "
+                         "report date)."))
     if plan.discount_rate.basis == "real":
         f.append(Finding(INFO, "Best Practices",
                          "Discount basis is 'real'. Growth rates should then "
                          "represent medical price growth *in excess of* general "
                          "inflation, or present value will be overstated."))
     for key, gr in plan.growth_rates.items():
-        if not gr.source:
+        # Only flag growth series actually referenced by an item (or 'general').
+        used = any(it.growth_key == key for it in plan.items) or key == "general"
+        if used and _source_missing(gr.source):
             f.append(Finding(WARN, "Transparency",
                              f"Growth rate '{key}' ({gr.annual_rate:.2%}) has no "
-                             f"cited source."))
+                             f"cited source / is still a placeholder."))
     if not plan.report_date:
         f.append(Finding(INFO, "Transparency", "No report date set."))
 
@@ -120,10 +146,12 @@ def validate_plan(plan: Plan) -> ValidationReport:
         name = item.item or "(unnamed item)"
 
         if not item.medical_foundation:
-            f.append(Finding(WARN, "Medical Foundation",
+            f.append(Finding(WARN, "Standards of Practice",
                              "No medical foundation cited (treating physician / "
-                             "record). Items lacking a foundation are the most "
-                             "common ground for exclusion (Gunn; Anderson-Moody).",
+                             "record). A non-physician planner may not supply "
+                             "independent medical opinions; items lacking a "
+                             "treating-provider basis are a common ground for "
+                             "exclusion.",
                              item=name))
 
         # Pricing provenance.
@@ -165,6 +193,13 @@ def validate_plan(plan: Plan) -> ValidationReport:
             f.append(Finding(WARN, "Findings/Conclusions",
                              "No timing pattern (frequency_per_year, "
                              "every_n_years, or one_time); item contributes $0.",
+                             item=name))
+        if (item.every_n_years is not None
+                and round(item.every_n_years) != item.every_n_years):
+            f.append(Finding(WARN, "Findings/Conclusions",
+                             f"every_n_years ({item.every_n_years}) is not a whole "
+                             f"number; the replacement cadence is rounded to "
+                             f"{int(round(item.every_n_years))} year(s).",
                              item=name))
         if (item.start_age is not None and item.end_age is not None
                 and item.start_age >= item.end_age):

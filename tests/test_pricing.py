@@ -102,3 +102,20 @@ def test_load_pricing_missing_required_columns(tmp_path):
     p.write_text("foo,bar\n1,2\n", encoding="utf-8")
     with pytest.raises(ValueError):
         load_pricing(p)
+
+
+def test_load_pricing_tolerates_messy_cells(tmp_path):
+    """Non-numeric amounts are skipped; '%' and space separators parse."""
+    p = tmp_path / "messy.csv"
+    p.write_text(
+        "source,code,amount,percentile\n"
+        "S,A1,N/A,80%\n"            # non-numeric amount -> row skipped
+        "S,A2,\"1 200\",80%\n"       # space thousands sep + percent
+        "S,A3,by report,\n",        # non-numeric amount -> row skipped
+        encoding="utf-8",
+    )
+    table = load_pricing(p)  # must not raise
+    assert len(table) == 1
+    rec = table.by_code("A2")[0]
+    assert rec.amount == pytest.approx(1200.0)
+    assert rec.percentile == pytest.approx(80.0)

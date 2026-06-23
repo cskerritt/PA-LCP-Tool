@@ -30,9 +30,12 @@ grounds for exclusion in the case law — and shows where each is enforced.
 | 71 | Local vs. national resource protocols (geographic specificity) | `geographic_basis`; validator note when absent |
 | 85 | Verifiable, geographically specific, market-rate costs | Pricing schema + provenance on the Data Sources tab |
 
-## C. Six peer-review domains (Barros-Bailey et al.)
+## C. Six peer-review domains
 
-The validator tags each finding with the domain it implicates:
+The tool organizes findings under six peer-review domains drawn from the
+life-care-plan peer-review literature and consistent with the IALCP Standards
+and Summit Consensus/Majority Statements. The validator tags each finding with
+the domain it implicates:
 
 1. **Jurisdiction/System Rules** — `collateral_source_note`, jurisdiction field.
 2. **Best Practices** — geographic specificity, defined growth series.
@@ -43,16 +46,23 @@ The validator tags each finding with the domain it implicates:
 
 ## D. Grounds for exclusion the validator checks
 
-The case law on excluded life care plans is consistent. The **Validation** tab
-and `palcp validate` check for the same defects *before* a workbook is built:
+The published critiques of excluded life care plans are consistent. The
+**Validation** tab and `palcp validate` check for the same defects *before* a
+workbook is built:
 
-| Exclusion ground | Illustrative authority | Validator check |
+| Exclusion ground | Basis | Validator check |
 | --- | --- | --- |
-| Care not founded in the treating record; template/"own beliefs" plans | *Gunn v. Atchison*; *Anderson-Moody v. Wilson* | Warns on any item lacking `medical_foundation` |
+| Care not founded in the treating record; template/"own beliefs" plans | Medical-foundation case law (e.g. *Anderson-Moody v. Wilson*, Fla. 1st DCA 2023, disallowing a life-care planner's projection of care not recommended by a treating physician or medical expert); practitioner case reviews | Warns on any item lacking `medical_foundation` |
 | Inconsistent / cherry-picked cost percentiles | UCR best-practice critiques | Warns when one source is used at multiple percentiles; notes deviations from the percentile policy |
 | Un-sourced or undated pricing | Transparency requirement | Warns on missing pricing source or retrieval date |
-| Speculative / unspecified durations and frequencies | *Gunn v. Atchison* | Warns on items with no timing pattern; errors on inverted age bands; warns on one-time events outside the life window |
-| Un-sourced economic assumptions | Daubert reliability | Warns on un-sourced life expectancy, discount rate, or growth rate; flags `PLACEHOLDER` rates |
+| Speculative / unspecified durations and frequencies | *Daubert* reliability / costing best practices | Warns on items with no timing pattern; errors on inverted age bands; warns on one-time events outside the life window; warns on non-integer replacement cadences |
+| Un-sourced economic assumptions | *Daubert* reliability | Warns on un-sourced/placeholder life expectancy, discount rate, or growth rate (a source beginning with `PLACEHOLDER` is treated as missing) |
+
+> **Verify your citations.** The named case above is provided as illustrative
+> authority; controlling law varies by jurisdiction and changes over time.
+> Counsel and the testifying expert are responsible for citing the governing
+> authority in the report. The generated workbook deliberately states these
+> grounds as general principles rather than embedding specific case citations.
 
 Severity levels:
 - **ERROR** — would make a figure meaningless (zero/unresolved cost, unknown

@@ -151,7 +151,12 @@ def load_items(path: str | Path, sheet: Optional[str] = None) -> list[CareItem]:
         wb = load_workbook(path, read_only=True, data_only=True)
         ws = wb[sheet] if sheet else wb[wb.sheetnames[0]]
         rows = ws.iter_rows(values_only=True)
-        header = [str(c).strip() if c is not None else "" for c in next(rows)]
+        try:
+            header_row = next(rows)
+        except StopIteration:  # empty / blank worksheet
+            wb.close()
+            return []
+        header = [str(c).strip() if c is not None else "" for c in header_row]
         items = [
             _item_from_row(dict(zip(header, r)), row_number=n)
             for n, r in enumerate(rows, start=2)

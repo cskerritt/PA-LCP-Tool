@@ -99,3 +99,20 @@ def test_cli_sample_smoke(tmp_path):
     rc = main(["sample", "--out", str(out)])
     assert rc == 0
     assert out.exists()
+
+
+def test_load_items_empty_xlsx_returns_empty(tmp_path):
+    from openpyxl import Workbook
+    p = tmp_path / "empty.xlsx"
+    Workbook().save(p)  # a workbook with one empty sheet
+    assert load_items(p) == []
+
+
+def test_cli_pricing_path_with_preset_suffix(tmp_path):
+    """`path:preset` only splits when the suffix is a known preset key."""
+    from palcp.cli import _load_pricing_arg
+    p = tmp_path / "vendor.csv"
+    p.write_text("CPT/HCPCS,Description,Charge\n99214,Office visit,198\n",
+                 encoding="utf-8")
+    table = _load_pricing_arg([f"{p}:va_reasonable_charges"])
+    assert table.by_code("99214")[0].source == "VA Reasonable Charges"

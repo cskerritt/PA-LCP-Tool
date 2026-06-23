@@ -4,9 +4,9 @@ This module deliberately ships **no** embedded mortality numbers.  Life
 expectancy drives the entire valuation, so the figure must trace to a verifiable
 published source the analyst can cite and defend (e.g. CDC/NCHS *United States
 Life Tables*) -- or, where the injury shortens lifespan, to a qualified medical
-or mortality opinion (per *Anderson-Moody* / *Gunn*).  Hard-coding numbers here
-would invite a transcription error into evidence; instead we read a table the
-analyst provides and preserve its source citation.
+or mortality opinion (per the medical-foundation case law).  Hard-coding numbers
+here would invite a transcription error into evidence; instead we read a table
+the analyst provides and preserve its source citation.
 
 Expected CSV columns (header row, case-insensitive)::
 

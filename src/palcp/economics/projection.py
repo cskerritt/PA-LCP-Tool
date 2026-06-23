@@ -187,7 +187,13 @@ def occurrences_by_year(item: CareItem, ages_start: list[float]) -> list[float]:
         for y, a in enumerate(ages_start):
             if a - 1e-9 <= target < a + 1.0 - 1e-9:
                 occ[y] = 1.0
-                break
+                return occ
+        # Boundary case: an event scheduled at exactly the terminal age falls on
+        # the open upper edge of the final year's window. Place it in the last
+        # projection year so the cost is not silently dropped.
+        last = n - 1
+        if last >= 0 and ages_start[last] - 1e-9 <= target <= ages_start[last] + 1.0 + 1e-9:
+            occ[last] = 1.0
         return occ
 
     # Periodic replacement: every N years, anchored at the first active year.
@@ -251,8 +257,12 @@ def project(plan: Plan) -> ProjectionResult:
         if it.category not in categories:
             categories.append(it.category)
 
-    # Per-year discount factors and growth factors (growth is per-rate).
-    m = [time_exponent(y, timing) for y in range(n)]
+    # Per-year time exponent m(y) = y + offset, scaled in the final partial
+    # year so the cash-flow date stays within the fraction of the year the
+    # claimant is actually alive (offset * weight, weight < 1 only on the last
+    # partial year; full years have weight 1.0 so m(y) is unchanged there).
+    offset = _TIMING_OFFSET[timing]
+    m = [y + offset * weights[y] for y in range(n)]
     discount_factor = [1.0 / (1.0 + d) ** m[y] for y in range(n)]
     growth_factor: dict[str, list[float]] = {}
     for key, gr in plan.growth_rates.items():
@@ -279,6 +289,13 @@ def project(plan: Plan) -> ProjectionResult:
         occ = occurrences_by_year(it, ages_start)
         cpo = it.cost_per_occurrence
 
+        # Discrete events (a one-time surgery, a periodic equipment replacement)
+        # are indivisible: if one lands in the final partial year the claimant
+        # incurs its FULL cost, not a prorated fraction. Only continuous,
+        # recurring care (frequency_per_year) is prorated by the partial-year
+        # weight (half a year -> half the visits).
+        discrete = bool(it.one_time or it.every_n_years)
+
         cur_total = nom_total = pv_total = occ_total = 0.0
         first_age = last_age = None
         active_years = 0.0
@@ -286,8 +303,8 @@ def project(plan: Plan) -> ProjectionResult:
         for y in range(n):
             if occ[y] == 0.0:
                 continue
-            w = weights[y]
-            base = occ[y] * cpo * w  # current dollars for this year (weighted)
+            eff_w = 1.0 if discrete else weights[y]
+            base = occ[y] * cpo * eff_w  # current dollars for this year
             nominal = base * gfac[y]
             pv = nominal * discount_factor[y]
 
@@ -298,8 +315,8 @@ def project(plan: Plan) -> ProjectionResult:
             cur_total += base
             nom_total += nominal
             pv_total += pv
-            occ_total += occ[y] * w
-            active_years += w
+            occ_total += occ[y] * eff_w
+            active_years += eff_w
             if first_age is None:
                 first_age = ages_start[y]
             last_age = ages_start[y]

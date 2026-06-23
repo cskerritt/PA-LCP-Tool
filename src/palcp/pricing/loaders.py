@@ -78,12 +78,29 @@ PRESETS: dict[str, dict] = {
 
 
 def _to_float(value) -> Optional[float]:
+    """Parse a currency/percent/number cell to float, or ``None``.
+
+    Real fee schedules contain non-numeric placeholders ('N/A', 'BR'/'by
+    report', 'see note') and percentiles written like '80%', plus space
+    thousands separators ('1 200'). Returns ``None`` for blank/unparseable
+    cells so the caller can skip the row rather than aborting the whole file.
+    """
     if value is None:
         return None
-    s = str(value).strip().replace("$", "").replace(",", "")
+    s = (
+        str(value)
+        .strip()
+        .replace("$", "")
+        .replace(",", "")
+        .replace("%", "")
+        .replace(" ", "")
+    )
     if s == "":
         return None
-    return float(s)
+    try:
+        return float(s)
+    except ValueError:
+        return None
 
 
 def _read_rows(path: str | Path, sheet: Optional[str]) -> tuple[list[str], Iterable[dict]]:

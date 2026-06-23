@@ -6,6 +6,8 @@ goal is a document that reads as a professional exhibit, not a dashboard.
 
 from __future__ import annotations
 
+import math
+
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import PageSetupProperties
@@ -105,12 +107,25 @@ def money(cell, cents: bool = False) -> None:
 
 
 def note(ws: Worksheet, row: int, text: str, ncols: int) -> int:
-    """Write a small footnote spanning ``ncols`` columns. Return next row."""
+    """Write a small footnote spanning ``ncols`` columns. Return next row.
+
+    A merged cell does not auto-fit, so we estimate the wrapped height from the
+    combined width of the spanned columns and set it explicitly; otherwise long
+    notes are clipped to one line in Excel and in print.
+    """
     last_col = get_column_letter(ncols)
     ws.merge_cells(f"A{row}:{last_col}{row}")
     c = ws.cell(row=row, column=1, value=text)
     c.font = SMALL_FONT
     c.alignment = LEFT_WRAP
+
+    total_width = 0.0
+    for i in range(1, ncols + 1):
+        w = ws.column_dimensions[get_column_letter(i)].width
+        total_width += w if w else 8.43  # Excel default column width
+    chars_per_line = max(20.0, total_width * 1.05)  # ~1 char per width unit
+    lines = max(1, math.ceil(len(str(text)) / chars_per_line))
+    ws.row_dimensions[row].height = max(15.0, 13.0 * lines + 3.0)
     return row + 1
 
 
