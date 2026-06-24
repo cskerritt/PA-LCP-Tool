@@ -47,12 +47,24 @@ def test_real_va_data_validates_to_the_cent():
     ds = ingest_va_tables(VA_DIR)
     assert len(ds.bases) > 10000
     assert len(ds.gaaf) > 5000
+    # Every charge table and every GAAF table is wired.
+    tables = {b.table for v in ds.bases.values() for b in v}
+    assert tables >= {"A", "B", "C", "E", "F", "G", "H", "I", "J", "K"}
+    assert {k[0] for k in ds.gaaf} >= {"L", "N", "O", "P", "Q", "R"}
 
     def amounts(code, table, **kw):
         return [c.amount for c in compute_charge(ds, code, "191", **kw)
                 if c.table == table]
 
+    # Core outpatient / professional / DME.
     assert 2050.23 in amounts("72148", "F")            # MRI, outpatient facility
     assert 357.53 in amounts("99214", "G")             # office visit, non-facility
     assert 5176.38 in amounts("K0005", "K")            # wheelchair, DME
     assert 71.86 in amounts("97110", "G")              # PT, physical medicine
+    # Newly-wired charge types (localized to ZIP 191).
+    assert 786.01 in amounts("00100", "H")             # anesthesia (base units)
+    assert 94.08 in amounts("D0120", "I")              # dental (Table R Class I GAAF)
+    assert 126.22 in amounts("A0382", "E")             # ambulance (national)
+    assert 306.03 in amounts("99234", "C")             # observation (hourly)
+    assert 62458.43 in amounts("001", "A")             # inpatient MS-DRG per diem
+    assert 1100.30 in amounts("SNF", "B")              # SNF per diem

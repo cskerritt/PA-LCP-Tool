@@ -115,6 +115,33 @@ def ingest_va_tables(directory: str | Path) -> VADataset:
             ds.gaaf[("Q", z, "Non-Drug")] = _num(r[1])
         if len(r) > 2 and _num(r[2]) is not None:
             ds.gaaf[("Q", z, "Drug")] = _num(r[2])
+    # Table N (inpatient): Surgical / Non-Surgical Room-&-Board GAAF (cols 1, 3).
+    for r in _rows(_find(d, "N"), "Table N")[5:]:
+        z = normalize_zip3(r[0])
+        if not z or str(r[0]).strip().lower().startswith("nation"):
+            continue
+        if len(r) > 1 and _num(r[1]) is not None:
+            ds.gaaf[("N", z, "Surgical")] = _num(r[1])
+        if len(r) > 3 and _num(r[3]) is not None:
+            ds.gaaf[("N", z, "Non-Surgical")] = _num(r[3])
+    # Table O (SNF): single factor.
+    for r in _rows(_find(d, "O"), "Table O")[5:]:
+        z = normalize_zip3(r[0])
+        if z and not str(r[0]).strip().lower().startswith("nation") \
+                and len(r) > 1 and _num(r[1]) is not None:
+            ds.gaaf[("O", z, None)] = _num(r[1])
+    # Table R (dental): Class I / II / III GAAF.
+    R = _rows(_find(d, "R"), "Table R")
+    Rhdr = R[4]
+    for r in R[5:]:
+        z = normalize_zip3(r[0])
+        if not z or str(r[0]).strip().lower().startswith("nation"):
+            continue
+        for ci in range(1, len(Rhdr)):
+            lab = str(Rhdr[ci] or "")
+            if "Class" in lab and ci < len(r) and _num(r[ci]) is not None:
+                cat = lab.replace("Class", "").replace("GAAF", "").strip()
+                ds.gaaf[("R", z, cat)] = _num(r[ci])
 
     # ---- Charge tables ------------------------------------------------------
     def add(b: VAChargeBasis) -> None:
@@ -167,6 +194,60 @@ def ingest_va_tables(directory: str | Path) -> VADataset:
                               total_expense_rvu=rvu, cf_category=cat, gaaf_table="L",
                               gaaf_category=cat,
                               methodology=str(r[5] or "") if len(r) > 5 else ""))
+    # Table C — Observation (hourly), direct charge x Table P.
+    for r in _rows(_find(d, "C"), "Table C")[6:]:
+        code, ch = (str(r[0]).strip() if r[0] else ""), _num(r[2]) if len(r) > 2 else None
+        if code and ch is not None:
+            add(VAChargeBasis(code=code, table="C", charge_type="Observation (hourly)",
+                              description=str(r[1] or "") if len(r) > 1 else "",
+                              charge=ch, gaaf_table="P"))
+    # Table E — Ambulance, direct charge (no VA ambulance GAAF table -> national).
+    for r in _rows(_find(d, "E"), "Table E")[5:]:
+        code, ch = (str(r[0]).strip() if r[0] else ""), _num(r[2]) if len(r) > 2 else None
+        if code and ch is not None:
+            add(VAChargeBasis(code=code, table="E", charge_type="Ambulance",
+                              description=str(r[1] or "") if len(r) > 1 else "",
+                              charge=ch, gaaf_table=""))
+    # Table H — Anesthesia: base units x Anesthesia CF x Table L (Anesthesia).
+    # Base units only; add intra-op time units for a complete anesthesia charge.
+    for r in _rows(_find(d, "H"), "Table H")[7:]:
+        code, bu = (str(r[0]).strip() if r[0] else ""), _num(r[2]) if len(r) > 2 else None
+        if code and bu is not None:
+            add(VAChargeBasis(code=code, table="H", charge_type="Anesthesia (base units)",
+                              description=str(r[1] or "") if len(r) > 1 else "",
+                              total_expense_rvu=bu, cf_category="Anesthesia",
+                              gaaf_table="L", gaaf_category="Anesthesia",
+                              methodology="base units only; add time units"))
+    # Table I — Dental, direct charge x Table R (Class I/II/III).
+    for r in _rows(_find(d, "I"), "Table I")[5:]:
+        code, ch = (str(r[0]).strip() if r[0] else ""), _num(r[2]) if len(r) > 2 else None
+        if not code or ch is None:
+            continue
+        gcat = str(r[3]).strip() if len(r) > 3 and r[3] else "I"
+        add(VAChargeBasis(code=code, table="I", charge_type="Dental",
+                          description=str(r[1] or "") if len(r) > 1 else "",
+                          charge=ch, gaaf_table="R", gaaf_category=gcat))
+    # Table A — Inpatient MS-DRG: Standard Room&Board + Ancillary per diem x Table N.
+    # ICU room&board is billed separately; geographic factor uses the R&B GAAF.
+    for r in _rows(_find(d, "A"), "Table A")[5:]:
+        code = str(r[0]).strip() if r[0] else ""
+        rb, anc = (_num(r[3]) if len(r) > 3 else None), (_num(r[5]) if len(r) > 5 else None)
+        if not code or rb is None:
+            continue
+        surg = str(r[2]).strip().upper() if len(r) > 2 else ""
+        cat = "Surgical" if surg.startswith("S") else "Non-Surgical"
+        add(VAChargeBasis(code=code, table="A", charge_type="Inpatient per diem (MS-DRG)",
+                          description=str(r[1] or "") if len(r) > 1 else "",
+                          charge=rb + (anc or 0.0), gaaf_table="N", gaaf_category=cat,
+                          methodology="Standard R&B + Ancillary per diem; ICU separate"))
+    # Table B — SNF all-inclusive per diem (single rate) x Table O.
+    for r in _rows(_find(d, "B"), "Table B")[5:]:
+        pd = _num(r[1]) if len(r) > 1 else None
+        if pd is not None:
+            add(VAChargeBasis(code="SNF", table="B", charge_type="SNF per diem",
+                              description=str(r[0] or "Skilled Nursing Facility"),
+                              charge=pd, gaaf_table="O", gaaf_category=None))
+            break
     return ds
 
 
