@@ -1,0 +1,5 @@
+source,code,code_type,description,amount,percentile,geographic_area,effective_date,citation_url
+VA Reasonable Charges (SAMPLE — load official data),99214,CPT,Office/outpatient visit established patient,200,,National,2026-01-01,https://www.va.gov/COMMUNITYCARE/revenue-ops/payer-rates.asp
+VA Reasonable Charges (SAMPLE — load official data),97110,CPT,Therapeutic exercise per 15 min,40,,National,2026-01-01,https://www.va.gov/COMMUNITYCARE/revenue-ops/payer-rates.asp
+VA Reasonable Charges (SAMPLE — load official data),72148,CPT,MRI lumbar spine without contrast,1200,,National,2026-01-01,https://www.va.gov/COMMUNITYCARE/revenue-ops/payer-rates.asp
+VA Reasonable Charges (SAMPLE — load official data),E1130,HCPCS,Standard wheelchair,500,,National,2026-01-01,https://www.va.gov/COMMUNITYCARE/revenue-ops/payer-rates.asp
