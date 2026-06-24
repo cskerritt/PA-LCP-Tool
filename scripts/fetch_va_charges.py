@@ -49,6 +49,17 @@ def _ingest_outpatient(path: str, version: str, effective: str, out: str) -> int
     return len(table.records)
 
 
+def _build_dataset(tables_dir: str, out: str) -> int:
+    """Ingest the full VA v5.26 workbook set into a queryable SQLite dataset."""
+    from palcp.pricing.va_ingest import ingest_va_tables, to_sqlite
+    ds = ingest_va_tables(tables_dir)
+    to_sqlite(ds, out)
+    bases = sum(len(v) for v in ds.bases.values())
+    print(f"built VA dataset: {len(ds.bases)} codes, {bases} charge bases, "
+          f"{len(ds.gaaf)} GAAF entries -> {out}")
+    return bases
+
+
 def _fetch_public(out_dir: str) -> None:
     d = Path(out_dir)
     d.mkdir(parents=True, exist_ok=True)
@@ -65,14 +76,21 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default="data/va_charges_normalized.csv")
     ap.add_argument("--fetch-public", action="store_true")
     ap.add_argument("--out-dir", default="data/va_public")
+    ap.add_argument("--va-tables-dir",
+                    help="directory of official VA v5.26 Table-*.xlsx workbooks "
+                         "to build the full localized charge dataset")
+    ap.add_argument("--dataset-out", default="data/va_charges.sqlite")
     args = ap.parse_args(argv)
 
+    did = False
     if args.fetch_public:
-        _fetch_public(args.out_dir)
+        _fetch_public(args.out_dir); did = True
+    if args.va_tables_dir:
+        _build_dataset(args.va_tables_dir, args.dataset_out); did = True
     if args.outpatient:
         n = _ingest_outpatient(args.outpatient, args.version, args.effective, args.out)
-        print(f"wrote {n} VA charge rows -> {args.out}")
-    if not args.fetch_public and not args.outpatient:
+        print(f"wrote {n} VA charge rows -> {args.out}"); did = True
+    if not did:
         ap.print_help()
         return 1
     return 0

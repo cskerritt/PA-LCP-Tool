@@ -28,6 +28,7 @@ htmlcov/
 # Official VA Reasonable Charges data (CPT is AMA-copyrighted; do not commit).
 # The labeled SAMPLE seed (src/palcp/data/va_charges_seed.csv) IS committed.
 data/va_charges_normalized.csv
+data/va_charges.sqlite
 data/va_public/
 *va_outpatient*.xlsx
 
