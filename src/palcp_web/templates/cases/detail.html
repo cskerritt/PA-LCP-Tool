@@ -25,7 +25,10 @@
   {% include "cases/_validation.html" %}
 </div>
 
-<h2>Care items</h2>
+<div class="actions" style="justify-content: space-between; align-items: baseline;">
+  <h2>Care items</h2>
+  <a class="btn secondary" href="/cases/{{ case.id }}/catalog">+ Add from common items</a>
+</div>
 <div id="items-section">
   {% include "cases/_items_section.html" %}
 </div>

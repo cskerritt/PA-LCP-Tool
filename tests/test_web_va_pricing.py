@@ -97,3 +97,18 @@ def test_lookup_unknown_code_reports_no_match():
     res = c.get(f"/cases/{cid}/lookup-code", params={"code": "00000"})
     assert res.status_code == 200
     assert "No VA match" in res.text
+
+
+def test_catalog_add_creates_priced_row():
+    c = TestClient(app)
+    _register(c, "cat@example.com")
+    cid = _make_case(c, "Cat Case")
+    c.post(f"/cases/{cid}", data={"name": "Cat Case", "age_at_report": "40",
+                                  "le_additional_years": "30", "geo_zip3": "191"})
+    assert "Physiatry" in c.get(f"/cases/{cid}/catalog").text
+    r = c.post(f"/cases/{cid}/catalog/add", data={"key": "pmr_followup"},
+               follow_redirects=True)
+    assert r.status_code == 200
+    detail = c.get(f"/cases/{cid}").text
+    assert "99214" in detail                       # code carried in
+    assert "200.00" in detail                      # auto-priced from VA SAMPLE

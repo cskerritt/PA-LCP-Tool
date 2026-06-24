@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Common items{% endblock %}
+{% block content %}
+<h1>Common LCP items — {{ case.name }}</h1>
+<p class="small muted">One click adds a fully-coded line; the price is pulled from
+the VA library at this case's locality
+({{ case.geo_zip3 or "set a ZIP on the case to localize" }}).</p>
+<form method="get" action="/cases/{{ case.id }}/catalog" class="actions">
+  <input name="q" value="{{ q }}" placeholder="search e.g. MRI, 97110, wheelchair">
+  <button class="btn secondary">Search</button>
+  <a class="btn secondary" href="/cases/{{ case.id }}">Back to case</a>
+</form>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Item</th><th>Category</th><th>Code</th><th>Growth</th><th></th></tr></thead>
+  <tbody>
+  {% for e in entries %}
+    <tr>
+      <td>{{ e.label }}</td><td class="small">{{ e.category }}</td>
+      <td class="small">{{ e.code }} ({{ e.code_type }})</td>
+      <td class="small">{{ e.growth_key }}</td>
+      <td>
+        <form method="post" action="/cases/{{ case.id }}/catalog/add">
+          <input type="hidden" name="key" value="{{ e.key }}">
+          <button class="btn small" type="submit">Add</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">No matches.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

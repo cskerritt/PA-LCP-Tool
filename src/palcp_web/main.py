@@ -24,7 +24,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .config import settings
 from .security import AuthRequired
 from .templating import render
-from .routers import auth, cases, items, lookup, pricing, rates, reports
+from .routers import auth, catalog, cases, items, lookup, pricing, rates, reports
 
 logger = logging.getLogger("palcp_web")
 
@@ -60,8 +60,8 @@ app.add_middleware(
 _static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
-for r in (auth.router, cases.router, items.router, lookup.router, pricing.router,
-          rates.router, reports.router):
+for r in (auth.router, cases.router, items.router, lookup.router, catalog.router,
+          pricing.router, rates.router, reports.router):
     app.include_router(r)
 
 
