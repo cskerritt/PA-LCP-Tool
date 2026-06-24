@@ -85,6 +85,8 @@ class Case(Base, TimestampMixin):
     claimant_sex: Mapped[str] = mapped_column(String(16), default="total")
     age_at_report: Mapped[float | None] = mapped_column(Float, nullable=True)
     residence: Mapped[str] = mapped_column(String(255), default="")
+    geo_zip3: Mapped[str] = mapped_column(String(3), default="")
+    geo_locality_name: Mapped[str] = mapped_column(String(128), default="")
 
     # Life expectancy
     le_additional_years: Mapped[float] = mapped_column(Float, default=0.0)
@@ -171,10 +173,13 @@ class PricingTable(Base, TimestampMixin):
     __tablename__ = "pricing_tables"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text, default="")
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    version: Mapped[str] = mapped_column(String(32), default="")
+    effective_date: Mapped[str] = mapped_column(String(32), default="")
 
     user: Mapped["User"] = relationship(back_populates="pricing_tables")
     records: Mapped[list["PriceRecordRow"]] = relationship(
