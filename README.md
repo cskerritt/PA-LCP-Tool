@@ -172,22 +172,48 @@ library and prices line items by CPT/HCPCS code. To minimize data entry:
   foundation. Unmatched codes are flagged, never guessed.
 
 The tool ships a small, clearly-labeled **SAMPLE** seed so it runs out of the box.
-To price from **real** VA charges, download the official VA outpatient/professional
-workbook (after accepting the VA's AMA CPT-Code disclaimer — a click you are
-entitled to make) and ingest it:
+
+#### Full VA charge engine (recommended) — every code, every locality
+
+Point the build script at the directory of official VA v5.26 data-table workbooks
+(`Table-A.xlsx` … `Table-S.xlsx`, downloaded after accepting the AMA CPT-Code
+disclaimer) and it builds a complete, queryable charge dataset:
 
 ```bash
 python scripts/fetch_va_charges.py \
-  --outpatient ~/Downloads/va_outpatient.xlsx \
-  --version v5.26 --effective 2026-01-01 \
-  --out data/va_charges_normalized.csv
-# restart the app: the default VA library reloads from the normalized CSV
+  --va-tables-dir "~/Downloads/VA UCR TABLES" \
+  --dataset-out data/va_charges.sqlite
+# restart the app
 ```
 
-The normalized CSV is **gitignored** — CPT® is AMA-copyrighted, and your CPT
-license governs internal use. Only the labeled SAMPLE seed is committed. The VA
-version, effective date, and locality are disclosed on the workbook's Data Sources
-tab.
+This ingests **all 15,000+ CPT/HCPCS codes** across the direct-charge tables
+(F outpatient-facility, K DME, C/D/E/I) and RVU-based tables (G professional,
+J lab) plus the per-3-digit-ZIP **GAAF** tables (L, P, Q) and conversion factors
+(S). With the dataset built, each case prices **on demand at its 3-digit ZIP**:
+
+- charge = `national charge × GAAF[zip3]` (direct) or
+  `RVU × conversion-factor × GAAF[zip3, category]` (professional/lab);
+- professional services use **non-facility** PE by default, flippable to
+  **facility** per care item (`VA setting` on the item form);
+- a code's **combinations** (e.g. an MRI's outpatient-facility charge *and* its
+  professional read) are shown in the code-lookup so you can pick the right one.
+
+Validated to the cent against the official tables (ZIP 191): 72148 MRI facility
+$2,050.23; 99214 office visit (non-facility) $357.53; K0005 wheelchair $5,176.38.
+
+`data/va_charges.sqlite` is **gitignored** — CPT® is AMA-copyrighted and your CPT
+license governs internal use. Only the labeled SAMPLE seed is committed; the app
+falls back to it when the dataset is absent. The VA version, effective date, and
+locality are disclosed on the workbook's Data Sources tab.
+
+#### Single-file alternative
+
+If you only have the outpatient/professional workbook (not the full table set):
+
+```bash
+python scripts/fetch_va_charges.py --outpatient ~/Downloads/va_outpatient.xlsx \
+  --version v5.26 --effective 2026-01-01 --out data/va_charges_normalized.csv
+```
 
 Run it locally:
 
