@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}History — {{ case.name }}{% endblock %}
+{% block content %}
+<div class="actions" style="justify-content: space-between;">
+  <h1>Edit history — {{ case.name }}</h1>
+  <a class="btn secondary" href="/cases/{{ case.id }}">Back to case</a>
+</div>
+<div class="card">
+  {% if entries %}
+  <table>
+    <thead><tr><th>When (UTC)</th><th>Action</th><th>Entity</th><th>Summary</th></tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td class="small nowrap">{{ e.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td><span class="badge {% if e.action == 'delete' %}b-error{% elif e.action == 'create' %}b-ok{% else %}b-info{% endif %}">{{ e.action }}</span></td>
+        <td class="small">{{ e.entity }}</td>
+        <td class="small">{{ e.summary }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">No history yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

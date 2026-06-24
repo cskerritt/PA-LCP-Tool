@@ -1,0 +1,69 @@
+# Curated common life-care-plan line items. Codes assigned per CPT/HCPCS using
+# the lcp-cpt-coding methodology. NO prices here — prices come from the linked
+# VA pricing table at the case's locality. default_timing is a hint only.
+- key: pmr_followup
+  label: "Physiatry (PM&R) follow-up visit"
+  category: "Physician Services"
+  code: "99214"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 4
+  note: "Established-patient office visit, moderate complexity."
+- key: ortho_followup
+  label: "Orthopedic follow-up visit"
+  category: "Physician Services"
+  code: "99214"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 2
+  note: "Established-patient office visit."
+- key: pt_therapeutic_exercise
+  label: "Physical therapy — therapeutic exercise (per 15 min)"
+  category: "Therapies"
+  code: "97110"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 24
+  note: "One unit = 15 minutes; set units_per_occurrence for longer sessions."
+- key: ot_eval
+  label: "Occupational therapy evaluation (low complexity)"
+  category: "Therapies"
+  code: "97165"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 1
+- key: emg_ncs
+  label: "EMG / nerve conduction study"
+  category: "Diagnostics & Imaging"
+  code: "95910"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 1
+- key: mri_lumbar
+  label: "MRI lumbar spine without contrast"
+  category: "Diagnostics & Imaging"
+  code: "72148"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 1
+- key: esi_injection
+  label: "Epidural steroid injection (lumbar/sacral)"
+  category: "Procedures & Surgery"
+  code: "62323"
+  code_type: "CPT"
+  growth_key: "medical_services"
+  typical_frequency: 2
+- key: manual_wheelchair
+  label: "Manual wheelchair (ultralightweight)"
+  category: "DME & Supplies"
+  code: "K0005"
+  code_type: "HCPCS"
+  growth_key: "dme"
+  every_n_years: 5
+- key: home_health_aide
+  label: "Home health aide (per hour)"
+  category: "Attendant / Home Care"
+  code: "S9122"
+  code_type: "HCPCS"
+  growth_key: "attendant_care_wage"
+  note: "Enter annual cost via units/frequency (e.g. hours/day × 365)."

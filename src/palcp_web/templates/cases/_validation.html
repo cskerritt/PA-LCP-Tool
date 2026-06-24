@@ -1,0 +1,41 @@
+<div class="totals" style="margin: 0 0 1rem;">
+  <div class="tot">
+    <div class="lbl">Lifetime current (undiscounted)</div>
+    <div class="n">{{ result.grand_total_current | money0 }}</div>
+  </div>
+  <div class="tot">
+    <div class="lbl">Lifetime future (nominal)</div>
+    <div class="n">{{ result.grand_total_nominal | money0 }}</div>
+  </div>
+  <div class="tot pv">
+    <div class="lbl">Lifetime present value</div>
+    <div class="n">{{ result.grand_total_present_value | money0 }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="actions" style="justify-content: space-between;">
+    <h3 style="margin:.1rem 0;">Daubert pre-flight: {{ validation.summary() }}</h3>
+    <button class="btn small secondary" hx-get="/cases/{{ case.id }}/validate"
+            hx-target="#validation-block" hx-swap="innerHTML">Re-check</button>
+  </div>
+  {% if validation.findings %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Severity</th><th>Domain</th><th>Item</th><th>Finding</th></tr></thead>
+    <tbody>
+    {% for f in validation.sorted() %}
+      <tr>
+        <td><span class="badge {% if f.severity == 'ERROR' %}b-error{% elif f.severity == 'WARN' %}b-warn{% else %}b-info{% endif %}">{{ f.severity }}</span></td>
+        <td class="small nowrap">{{ f.domain }}</td>
+        <td class="small">{{ f.item or "—" }}</td>
+        <td class="small">{{ f.message }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <p class="muted"><span class="badge b-ok">PASS</span> No findings — all checks passed.</p>
+  {% endif %}
+</div>

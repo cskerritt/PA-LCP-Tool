@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ table.name }}{% endblock %}
+{% block content %}
+<div class="actions" style="justify-content: space-between;">
+  <h1>{{ table.name }}</h1>
+  <a class="btn secondary" href="/pricing">Back to pricing</a>
+</div>
+{% if table.description %}<p class="muted">{{ table.description }}</p>{% endif %}
+
+<div class="card">
+  <h3>Add records from a file</h3>
+  <form method="post" action="/pricing/{{ table.id }}/upload" enctype="multipart/form-data" class="row">
+    <div>
+      <label>Loader preset</label>
+      <select name="preset">{% for p in presets %}<option value="{{ p }}">{{ p or "— canonical columns —" }}</option>{% endfor %}</select>
+    </div>
+    <div><label>File (CSV / XLSX)</label><input type="file" name="file" accept=".csv,.xlsx,.xlsm" required></div>
+    <div style="display:flex; align-items:flex-end;"><button class="btn" type="submit">Upload</button></div>
+  </form>
+</div>
+
+<h2>Records ({{ record_count }}{% if record_count > 500 %}, showing first 500{% endif %})</h2>
+<div class="card">
+  {% if records %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Source</th><th>Code</th><th>Description</th><th class="right">Amount</th><th>%ile</th><th>Geography</th><th>Effective</th></tr></thead>
+    <tbody>
+    {% for r in records %}
+      <tr>
+        <td class="small">{{ r.source }}</td>
+        <td class="small nowrap">{{ r.code }}</td>
+        <td class="small">{{ r.description }}</td>
+        <td class="right">{{ r.amount | money }}</td>
+        <td class="small">{{ r.percentile if r.percentile is not none else "" }}</td>
+        <td class="small">{{ r.geographic_area }}</td>
+        <td class="small">{{ r.effective_date }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <p class="muted">No records yet — upload a file above.</p>
+  {% endif %}
+</div>
+
+<div class="actions">
+  <form method="post" action="/pricing/{{ table.id }}/delete" onsubmit="return confirm('Delete this pricing table?');">
+    <button class="btn danger" type="submit">Delete pricing table</button>
+  </form>
+</div>
+{% endblock %}

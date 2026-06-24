@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Cases{% endblock %}
+{% block content %}
+<div class="actions" style="justify-content: space-between;">
+  <h1>Life Care Plan Cases</h1>
+  <a class="btn" href="/cases/new">+ New case</a>
+</div>
+
+{% if not rows %}
+  <div class="card">
+    <p class="muted">No cases yet. Create your first life care plan to get started.</p>
+    <a class="btn" href="/cases/new">+ New case</a>
+  </div>
+{% else %}
+<div class="grid-cases">
+  {% for r in rows %}
+  <a class="card case-card" href="/cases/{{ r.case.id }}">
+    <h3>{{ r.case.name }}</h3>
+    <div class="small muted">{{ r.case.claimant_name or "No claimant" }}{% if r.case.jurisdiction %} · {{ r.case.jurisdiction }}{% endif %}</div>
+    <div class="small" style="margin-top:.5rem;">{{ r.item_count }} care item(s)</div>
+    {% if r.latest %}
+      <div class="lbl" style="margin-top:.5rem;">Latest present value</div>
+      <div class="n" style="font-size:1.1rem;font-weight:700;color:var(--navy);">{{ r.latest.total_present_value | money0 }}</div>
+      <div class="small muted">{{ r.latest.generated_on }}</div>
+    {% else %}
+      <div class="small muted" style="margin-top:.5rem;">No report generated yet</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,3 @@
+source,code,code_type,description,amount,percentile,geographic_area,effective_date,citation_url
+VA Reasonable Charges,99214,CPT,"Office/outpatient visit, established patient",0,,National,YYYY,https://www.va.gov/COMMUNITYCARE/revenue_ops/Reasonable_Charges.asp
+CMS DMEPOS Fee Schedule,K0005,HCPCS,"Ultralightweight manual wheelchair",0,,ST,YYYY,https://www.cms.gov/medicare/payment/fee-schedules/dmepos-fee-schedule

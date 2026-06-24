@@ -1,0 +1,17 @@
+{% if matched %}
+<input id="f_unit_cost" name="unit_cost" value="{{ '%.2f'|format(item.unit_cost) }}" hx-swap-oob="true">
+<input id="f_description" name="description" value="{{ item.description }}" hx-swap-oob="true">
+<input id="f_code_type" name="code_type" value="{{ item.code_type }}" hx-swap-oob="true">
+<input id="f_pricing_source" name="pricing_source" value="{{ item.pricing_source }}" hx-swap-oob="true">
+<input id="f_percentile" name="percentile" value="{{ item.percentile if item.percentile is not none else '' }}" hx-swap-oob="true">
+<input id="f_geographic_basis" name="geographic_basis" value="{{ item.geographic_basis }}" hx-swap-oob="true">
+<input id="f_retrieval_date" name="retrieval_date" value="{{ item.retrieval_date }}" hx-swap-oob="true">
+<input id="f_category" name="category" value="{{ item.category }}" hx-swap-oob="true">
+<select id="f_growth_key" name="growth_key" hx-swap-oob="true">
+  {% for k in growth_keys %}<option value="{{ k }}" {{ "selected" if item.growth_key == k }}>{{ k }}</option>{% endfor %}
+</select>
+<span id="lookup-status" class="small" hx-swap-oob="true">✓ Priced from {{ item.pricing_source }} ({{ item.geographic_basis or "national" }}) — {{ item.unit_cost | money }}
+{% if combos and combos|length > 1 %}<br><span class="muted">Combinations for {{ code }}{% if zip3 %} @ ZIP {{ zip3 }}{% endif %}: {% for c in combos %}{{ c.charge_type }} {{ c.amount | money }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</span>
+{% else %}
+<span id="lookup-status" class="small b-warn" hx-swap-oob="true">No VA match for code “{{ code }}”. Enter a direct cost/source, or flag for a vendor survey.</span>
+{% endif %}

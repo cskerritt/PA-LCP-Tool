@@ -1,0 +1,76 @@
+# PA-LCP-Tool — SAMPLE assumptions (synthetic, illustrative only)
+# These values are fictional and provided only to demonstrate the tool.
+# The growth/discount rates carry "ILLUSTRATIVE" sources so they are non-empty
+# for the demo but must NOT be relied upon in an actual report.
+
+report_date: "2026-06-23"
+base_year: 2026
+matter: "SAMPLE — Fictional Claimant v. Defendant (synthetic data)"
+jurisdiction: "Illustrative — Daubert / FRE 702"
+evaluator: "Christopher Skerritt"
+evaluator_credentials: "M.B.A., CRC, CLCP, FVE"
+percentile_policy: 80
+collateral_source_note: >
+  ILLUSTRATIVE: costs are stated at usual, customary, and reasonable value
+  (billed-charge basis). Future insurance and Affordable Care Act coverage are
+  treated as speculative and excluded, consistent with a robust collateral-source
+  jurisdiction. Confirm the controlling rule for the actual venue.
+
+claimant:
+  name: "SAMPLE — Fictional Claimant"
+  dob: "1984-01-01"
+  sex: "total"
+  age_at_report: 42
+  residence: "Allegheny County, PA (ZIP 152xx)"
+
+life_expectancy:
+  additional_years: 38.0
+  source: "ILLUSTRATIVE — CDC/NCHS U.S. Life Tables (sample figure)"
+  citation_url: "https://www.cdc.gov/nchs/products/life_tables.htm"
+  as_of: "sample"
+  note: "Unimpaired period life table; not medically reduced (illustrative)."
+
+discount_rate:
+  annual_rate: 0.043
+  basis: "nominal"
+  timing: "mid_year"
+  source: "ILLUSTRATIVE — U.S. Treasury 20-Year Constant Maturity (sample figure)"
+  citation_url: "https://www.federalreserve.gov/releases/h15/"
+  as_of: "sample"
+
+growth_rates:
+  medical_services:
+    label: "Medical Care Services"
+    annual_rate: 0.032
+    source: "ILLUSTRATIVE — BLS CPI-U Medical Care Services (sample CAGR)"
+    citation_url: "https://www.bls.gov/cpi/"
+    as_of: "sample"
+  rx:
+    label: "Prescription Drugs"
+    annual_rate: 0.025
+    source: "ILLUSTRATIVE — BLS CPI-U Medicinal Drugs (sample CAGR)"
+    citation_url: "https://www.bls.gov/cpi/"
+    as_of: "sample"
+  dme:
+    label: "Durable Medical Equipment / Supplies"
+    annual_rate: 0.020
+    source: "ILLUSTRATIVE — sample figure"
+    as_of: "sample"
+  facility:
+    label: "Hospital & Facility Services"
+    annual_rate: 0.038
+    source: "ILLUSTRATIVE — BLS PPI Hospitals (sample CAGR)"
+    citation_url: "https://www.bls.gov/ppi/"
+    as_of: "sample"
+  attendant_care_wage:
+    label: "Attendant / Home-Health Care (wage-based)"
+    annual_rate: 0.033
+    source: "ILLUSTRATIVE — BLS Employment Cost Index, health care (sample CAGR)"
+    citation_url: "https://www.bls.gov/eci/"
+    as_of: "sample"
+  general:
+    label: "General (CPI-U, all items)"
+    annual_rate: 0.024
+    source: "ILLUSTRATIVE — BLS CPI-U all items (sample CAGR)"
+    citation_url: "https://www.bls.gov/cpi/"
+    as_of: "sample"

@@ -1,0 +1,67 @@
+# PA-LCP-Tool — assumptions template
+# Fill in every field you will rely on. The Validation tab will flag any rate
+# or figure left without a cited source. Replace ALL placeholder rates with the
+# current published figure (and citation) as of your report date.
+
+report_date: "YYYY-MM-DD"
+base_year: 2026                 # first projection year (calendar)
+matter: "Caption, e.g. Doe v. Roe, No. 0:00-cv-00000"
+jurisdiction: "Court / evidentiary standard (e.g. E.D. Pa.; Daubert)"
+evaluator: "Your name"
+evaluator_credentials: "e.g. M.B.A., CRC, CLCP, FVE"
+percentile_policy: 80           # reasonable-value percentile applied consistently
+collateral_source_note: >
+  State the jurisdiction's billed-vs-paid / collateral-source treatment relied
+  upon and why (e.g., future insurance treated as speculative and excluded).
+
+claimant:
+  name: "Claimant name"
+  dob: "YYYY-MM-DD"
+  sex: "total"                  # total | male | female (for any life-table lookup)
+  age_at_report: 0
+  residence: "County, State (ZIP) — geographic basis for pricing"
+
+life_expectancy:
+  additional_years: 0.0         # remaining life expectancy in years
+  source: "e.g. CDC/NCHS U.S. Life Tables, 20XX, Table B"
+  citation_url: "https://www.cdc.gov/nchs/products/life_tables.htm"
+  as_of: "20XX"
+  note: "e.g. Unimpaired period life table; not medically reduced."
+
+discount_rate:
+  annual_rate: 0.0              # decimal, e.g. 0.043
+  basis: "nominal"              # nominal (with nominal growth) | real (with excess growth)
+  timing: "mid_year"            # begin_year | mid_year | end_year
+  source: "e.g. U.S. Treasury 20-Year Constant Maturity (H.15)"
+  citation_url: "https://www.federalreserve.gov/releases/h15/"
+  as_of: "YYYY-MM-DD"
+
+# Growth (medical inflation) series. Keys are referenced by each care item's
+# growth_key column. Add/rename keys as needed.
+growth_rates:
+  medical_services:
+    label: "Medical Care Services"
+    annual_rate: 0.0
+    source: "e.g. BLS CPI-U Medical Care Services (CUUR0000SAM2), long-run CAGR"
+    citation_url: "https://www.bls.gov/cpi/"
+    as_of: "YYYY-MM"
+  rx:
+    label: "Prescription Drugs"
+    annual_rate: 0.0
+    source: ""
+  dme:
+    label: "Durable Medical Equipment / Supplies"
+    annual_rate: 0.0
+    source: ""
+  facility:
+    label: "Hospital & Facility Services"
+    annual_rate: 0.0
+    source: ""
+  attendant_care_wage:
+    label: "Attendant / Home-Health Care (wage-based)"
+    annual_rate: 0.0
+    source: "e.g. BLS Employment Cost Index, health-care wages"
+  general:
+    label: "General (CPI-U, all items)"
+    annual_rate: 0.0
+    source: ""

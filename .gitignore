@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated workbooks / scratch output
+/out/
+*.local.xlsx
+
+# Local databases
+*.db
+*.sqlite3
+
+# Official VA Reasonable Charges data (CPT is AMA-copyrighted; do not commit).
+# The labeled SAMPLE seed (src/palcp/data/va_charges_seed.csv) IS committed.
+data/va_charges_normalized.csv
+data/va_charges.sqlite
+data/va_public/
+*va_outpatient*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
