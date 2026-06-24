@@ -110,7 +110,7 @@ def _growth_rates_for(case: Case) -> dict[str, GrowthRate]:
     return rates
 
 
-def _care_item(row: CareItemRow) -> CareItem:
+def _care_item(row: CareItemRow, geo_zip3: str = "") -> CareItem:
     return CareItem(
         category=row.category or "Uncategorized",
         item=row.item,
@@ -120,7 +120,7 @@ def _care_item(row: CareItemRow) -> CareItem:
         code_type=row.code_type,
         pricing_source=row.pricing_source,
         percentile=row.percentile,
-        geographic_basis=row.geographic_basis,
+        geographic_basis=row.geographic_basis or geo_zip3,
         retrieval_date=row.retrieval_date,
         units_per_occurrence=row.units_per_occurrence or 1.0,
         frequency_per_year=row.frequency_per_year,
@@ -160,7 +160,7 @@ def plan_from_case(case: Case) -> Plan:
         life_expectancy=le,
         discount_rate=discount,
         growth_rates=_growth_rates_for(case),
-        items=[_care_item(r) for r in case.items],
+        items=[_care_item(r, case.geo_zip3) for r in case.items],
         report_date=case.report_date,
         base_year=case.base_year,
         evaluator=case.evaluator,

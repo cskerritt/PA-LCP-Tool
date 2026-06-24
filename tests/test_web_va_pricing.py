@@ -74,6 +74,22 @@ def test_lookup_code_autofills_from_va():
     assert "VA Reasonable Charges" in body                 # source
 
 
+def test_case_zip3_persists():
+    from palcp_web.db import SessionLocal
+    from palcp_web.models import Case
+    c = TestClient(app)
+    _register(c, "zip@example.com")
+    cid = _make_case(c, "Zip Case")
+    c.post(f"/cases/{cid}", data={"name": "Zip Case", "age_at_report": "40",
+                                  "le_additional_years": "30", "geo_zip3": "19103",
+                                  "geo_locality_name": "Philadelphia"})
+    db = SessionLocal()
+    case = db.get(Case, cid)
+    assert case.geo_zip3 == "191"            # truncated to 3 digits
+    assert case.geo_locality_name == "Philadelphia"
+    db.close()
+
+
 def test_lookup_unknown_code_reports_no_match():
     c = TestClient(app)
     _register(c, "lookup2@example.com")

@@ -52,6 +52,8 @@ def _apply_assumptions(case: Case, form: dict) -> None:
     case.claimant_sex = clean(form.get("claimant_sex")) or "total"
     case.age_at_report = opt_float(form.get("age_at_report"))
     case.residence = clean(form.get("residence"))
+    case.geo_zip3 = clean(form.get("geo_zip3"))[:3]
+    case.geo_locality_name = clean(form.get("geo_locality_name"))
     # Life expectancy
     case.le_additional_years = opt_float(form.get("le_additional_years")) or 0.0
     case.le_source = clean(form.get("le_source"))

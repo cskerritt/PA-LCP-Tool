@@ -4,23 +4,28 @@
 <h1>Edit care item — {{ case.name }}</h1>
 <form method="post" action="/cases/{{ case.id }}/items/{{ item.id }}" class="card">
   <div class="row">
-    <div><label>Category</label><input name="category" value="{{ item.category }}"></div>
+    <div><label>Category</label><input name="category" id="f_category" value="{{ item.category }}"></div>
     <div style="flex:2 1 320px;"><label>Item *</label><input name="item" value="{{ item.item }}" required></div>
     <div><label>Growth key</label>
-      <select name="growth_key">{% for k in growth_keys %}<option value="{{ k }}" {{ "selected" if item.growth_key == k }}>{{ k }}</option>{% endfor %}</select>
+      <select name="growth_key" id="f_growth_key">{% for k in growth_keys %}<option value="{{ k }}" {{ "selected" if item.growth_key == k }}>{{ k }}</option>{% endfor %}</select>
     </div>
   </div>
-  <label>Description</label><input name="description" value="{{ item.description }}">
+  <label>Description</label><input name="description" id="f_description" value="{{ item.description }}">
   <div class="row">
-    <div><label>Code</label><input name="code" value="{{ item.code }}"></div>
-    <div><label>Code type</label><input name="code_type" value="{{ item.code_type }}"></div>
-    <div><label>Pricing source</label><input name="pricing_source" value="{{ item.pricing_source }}"></div>
-    <div><label>Percentile</label><input name="percentile" value="{{ item.percentile if item.percentile is not none else '' }}"></div>
+    <div><label>Code</label>
+      <input name="code" id="f_code" value="{{ item.code }}"
+             hx-get="/cases/{{ case.id }}/lookup-code"
+             hx-trigger="change, keyup changed delay:600ms"
+             hx-include="this" hx-target="#lookup-sink" hx-swap="innerHTML">
+      <span id="lookup-status" class="small muted"></span></div>
+    <div><label>Code type</label><input name="code_type" id="f_code_type" value="{{ item.code_type }}"></div>
+    <div><label>Pricing source</label><input name="pricing_source" id="f_pricing_source" value="{{ item.pricing_source }}"></div>
+    <div><label>Percentile</label><input name="percentile" id="f_percentile" value="{{ item.percentile if item.percentile is not none else '' }}"></div>
   </div>
   <div class="row">
-    <div><label>Geographic basis</label><input name="geographic_basis" value="{{ item.geographic_basis }}"></div>
-    <div><label>Retrieval date</label><input name="retrieval_date" value="{{ item.retrieval_date }}"></div>
-    <div><label>Unit cost ($)</label><input name="unit_cost" value="{{ item.unit_cost }}"></div>
+    <div><label>Geographic basis</label><input name="geographic_basis" id="f_geographic_basis" value="{{ item.geographic_basis }}"></div>
+    <div><label>Retrieval date</label><input name="retrieval_date" id="f_retrieval_date" value="{{ item.retrieval_date }}"></div>
+    <div><label>Unit cost ($)</label><input name="unit_cost" id="f_unit_cost" value="{{ item.unit_cost }}"></div>
     <div><label>Units / occurrence</label><input name="units_per_occurrence" value="{{ item.units_per_occurrence }}"></div>
   </div>
   <div class="row">
@@ -35,6 +40,7 @@
   </div>
   <label>Medical foundation</label><input name="medical_foundation" value="{{ item.medical_foundation }}">
   <label>Notes</label><input name="notes" value="{{ item.notes }}">
+  <div id="lookup-sink" style="display:none"></div>
   <div class="actions">
     <button class="btn" type="submit">Save item</button>
     <a class="btn secondary" href="/cases/{{ case.id }}">Cancel</a>

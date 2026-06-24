@@ -53,6 +53,13 @@
         <div><label>Age at report</label><input name="age_at_report" value="{{ case.age_at_report if case.age_at_report is not none else '' }}"></div>
         <div style="flex:2 1 400px;"><label>Residence / geographic basis</label><input name="residence" value="{{ case.residence }}"></div>
       </div>
+      <div class="row">
+        <div><label>Claimant ZIP (3-digit) — VA pricing locality</label>
+          <input name="geo_zip3" maxlength="3" value="{{ case.geo_zip3 }}" placeholder="e.g. 191 (Philadelphia)"></div>
+        <div style="flex:2 1 320px;"><label>Locality name (optional)</label>
+          <input name="geo_locality_name" value="{{ case.geo_locality_name }}"></div>
+      </div>
+      <p class="small muted">VA Reasonable Charges are looked up at this 3-digit ZIP locality; without a locality match the national charge is used and disclosed.</p>
     </fieldset>
 
     <fieldset>
