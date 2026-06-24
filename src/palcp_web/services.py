@@ -52,26 +52,43 @@ def _va_source_path() -> Path:
 
 
 def ensure_default_va_library(db: Session) -> PricingTableRow:
-    """Create or return the system-wide default VA pricing library (idempotent)."""
+    """Create or refresh the system-wide default VA pricing library (idempotent).
+
+    Creates it on first run from the official normalized CSV if present, else the
+    labeled SAMPLE seed. If a SAMPLE library already exists and the official CSV
+    has since appeared (e.g. after running scripts/fetch_va_charges.py), the
+    records are reloaded in place to the official data on the next call/startup.
+    """
+    src = _va_source_path()
+    is_official = src != SEED_PATH
     existing = db.scalar(
         select(PricingTableRow).where(PricingTableRow.is_system.is_(True))
         .order_by(PricingTableRow.id.desc()))
     if existing is not None and existing.records:
-        return existing
+        existing_is_sample = "SAMPLE" in (existing.name or "")
+        # Only do work when upgrading a SAMPLE library to official data.
+        if not (is_official and existing_is_sample):
+            return existing
 
-    src = _va_source_path()
     loaded = load_va_outpatient(src, version=VA_DEFAULT_VERSION,
                                 effective_date=VA_DEFAULT_EFFECTIVE)
     label = "VA Reasonable Charges " + VA_DEFAULT_VERSION
     if loaded.records and "SAMPLE" in (loaded.records[0].source or ""):
         label += " (SAMPLE — load official data)"
-    table = existing or PricingTableRow(
-        user_id=None, is_system=True, name=label,
-        version=VA_DEFAULT_VERSION, effective_date=VA_DEFAULT_EFFECTIVE,
-        description="Auto-loaded default. Public VA outpatient/professional "
-                    "reasonable charges.")
+
+    table = existing or PricingTableRow(user_id=None, is_system=True)
+    table.name = label
+    table.version = VA_DEFAULT_VERSION
+    table.effective_date = VA_DEFAULT_EFFECTIVE
+    table.description = ("Auto-loaded default. Public VA outpatient/professional "
+                         "reasonable charges.")
     if existing is None:
         db.add(table)
+        db.flush()
+    else:
+        # Reloading: clear the stale (SAMPLE) records first.
+        for r in list(table.records):
+            db.delete(r)
         db.flush()
     for r in loaded.records:
         db.add(PriceRecordRow(
@@ -80,6 +97,7 @@ def ensure_default_va_library(db: Session) -> PricingTableRow:
             geographic_area=r.geographic_area, effective_date=r.effective_date,
             citation_url=r.citation_url))
     db.commit()
+    db.refresh(table)  # re-load the records relationship after reload/create
     return table
 
 

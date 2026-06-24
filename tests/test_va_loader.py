@@ -5,11 +5,16 @@ from palcp.pricing.va import load_va_outpatient, SEED_PATH
 
 def test_seed_file_loads_and_is_labeled():
     table = load_va_outpatient(SEED_PATH, version="SAMPLE", effective_date="2026-01-01")
-    assert len(table) == 4
+    assert len(table) >= 8                   # covers every catalog code
     rec = table.by_code("99214")[0]
     assert rec.amount == 200.0
     assert "SAMPLE" in rec.source           # never mistaken for real data
     assert rec.effective_date == "2026-01-01"
+    # every code referenced by the bundled catalog is priced by the SAMPLE seed
+    from palcp.catalog import load_catalog
+    seeded = {r.code for r in table.records}
+    for entry in load_catalog():
+        assert entry["code"] in seeded, f"catalog code {entry['code']} missing from seed"
 
 
 def test_load_va_outpatient_stamps_version(tmp_path: Path):

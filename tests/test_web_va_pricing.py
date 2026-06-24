@@ -112,3 +112,27 @@ def test_catalog_add_creates_priced_row():
     detail = c.get(f"/cases/{cid}").text
     assert "99214" in detail                       # code carried in
     assert "200.00" in detail                      # auto-priced from VA SAMPLE
+
+
+def test_zzz_default_library_reloads_when_official_appears(tmp_path, monkeypatch):
+    # Named to sort last: it swaps the shared system table to "official" data.
+    from palcp_web import services
+    from palcp_web.db import SessionLocal
+    db = SessionLocal()
+    sample = services.ensure_default_va_library(db)
+    assert "SAMPLE" in sample.name           # starts as the labeled seed
+    db.close()
+
+    official = tmp_path / "official.csv"
+    official.write_text(
+        "source,code,code_type,description,amount,percentile,geographic_area,"
+        "effective_date,citation_url\n"
+        "VA Reasonable Charges v5.26,99214,CPT,Office visit,250,,191,2026-01-01,"
+        "https://www.va.gov/x\n", encoding="utf-8")
+    monkeypatch.setattr(services, "_va_source_path", lambda: official)
+
+    db = SessionLocal()
+    reloaded = services.ensure_default_va_library(db)
+    assert "SAMPLE" not in reloaded.name     # upgraded to official label
+    assert any(r.amount == 250.0 for r in reloaded.records)
+    db.close()
