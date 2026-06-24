@@ -57,3 +57,27 @@ def test_default_va_library_seeded_and_autolinked():
     linked_tables = [db.get(PricingTable, l.pricing_table_id) for l in links]
     assert any(t.is_system for t in linked_tables)   # VA auto-linked
     db.close()
+
+
+def test_lookup_code_autofills_from_va():
+    c = TestClient(app)
+    _register(c, "lookup@example.com")
+    cid = _make_case(c, "Lookup Case")
+    c.post(f"/cases/{cid}", data={"name": "Lookup Case", "age_at_report": "40",
+                                  "le_additional_years": "30", "geo_zip3": "191"})
+    res = c.get(f"/cases/{cid}/lookup-code", params={"code": "99214"})
+    assert res.status_code == 200
+    body = res.text
+    assert 'name="unit_cost"' in body and "200" in body   # SAMPLE price
+    assert "Office/outpatient visit" in body               # description
+    assert "medical_services" in body                      # growth key
+    assert "VA Reasonable Charges" in body                 # source
+
+
+def test_lookup_unknown_code_reports_no_match():
+    c = TestClient(app)
+    _register(c, "lookup2@example.com")
+    cid = _make_case(c, "Lookup2")
+    res = c.get(f"/cases/{cid}/lookup-code", params={"code": "00000"})
+    assert res.status_code == 200
+    assert "No VA match" in res.text
