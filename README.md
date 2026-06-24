@@ -186,10 +186,12 @@ python scripts/fetch_va_charges.py \
 # restart the app
 ```
 
-This ingests **all 15,000+ CPT/HCPCS codes** across the direct-charge tables
-(F outpatient-facility, K DME, C/D/E/I) and RVU-based tables (G professional,
-J lab) plus the per-3-digit-ZIP **GAAF** tables (L, P, Q) and conversion factors
-(S). With the dataset built, each case prices **on demand at its 3-digit ZIP**:
+This ingests **all 17,000+ CPT/HCPCS codes** across every VA charge table —
+direct-charge (F outpatient-facility, K DME, C observation, E ambulance, I dental,
+A inpatient MS-DRG, B SNF) and RVU-based (G professional, J lab, H anesthesia) —
+plus every per-3-digit-ZIP **GAAF** table (L professional, P outpatient, Q DME,
+N inpatient, O SNF, R dental) and the conversion factors (S). With the dataset
+built, each case prices **on demand at its 3-digit ZIP**:
 
 - charge = `national charge × GAAF[zip3]` (direct) or
   `RVU × conversion-factor × GAAF[zip3, category]` (professional/lab);
