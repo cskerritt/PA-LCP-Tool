@@ -21,6 +21,10 @@ htmlcov/
 /out/
 *.local.xlsx
 
+# Local databases
+*.db
+*.sqlite3
+
 # OS
 .DS_Store
 Thumbs.db

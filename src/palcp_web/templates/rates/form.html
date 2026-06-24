@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ library.name }}{% endblock %}
+{% block content %}
+<div class="actions" style="justify-content: space-between;">
+  <h1>Rate library</h1>
+  <a class="btn secondary" href="/rates">Back</a>
+</div>
+<form method="post" action="/rates/{{ library.id }}" class="card">
+  <div class="row">
+    <div><label>Name</label><input name="name" value="{{ library.name }}"></div>
+    <div style="flex:2 1 360px;"><label>Description</label><input name="description" value="{{ library.description }}"></div>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Key</th><th>Label</th><th>Annual rate</th><th>Source</th><th>As of</th></tr></thead>
+    <tbody>
+    {% for e in library.entries | sort(attribute='key') %}
+      <tr>
+        <td class="nowrap small">{{ e.key }}</td>
+        <td><input name="e_{{ e.key }}_label" value="{{ e.label }}"></td>
+        <td><input name="e_{{ e.key }}_rate" value="{{ e.annual_rate }}" style="width:6rem"></td>
+        <td><input name="e_{{ e.key }}_source" value="{{ e.source }}"></td>
+        <td><input name="e_{{ e.key }}_as_of" value="{{ e.as_of }}" style="width:6rem"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="actions">
+    <button class="btn" type="submit">Save</button>
+  </div>
+</form>
+<div class="actions">
+  <form method="post" action="/rates/{{ library.id }}/delete" onsubmit="return confirm('Delete this rate library?');">
+    <button class="btn danger" type="submit">Delete library</button>
+  </form>
+</div>
+{% endblock %}

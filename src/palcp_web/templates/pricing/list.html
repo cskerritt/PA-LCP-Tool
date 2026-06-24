@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Pricing tables{% endblock %}
+{% block content %}
+<div class="actions" style="justify-content: space-between;">
+  <h1>Pricing tables</h1>
+  <a class="btn" href="/pricing/new">+ New pricing table</a>
+</div>
+<p class="muted small">Upload your fee-schedule / charge data (VA Reasonable Charges, CMS DMEPOS, MFUS, vendor exports). Link a table to a case to price care items by code.</p>
+<div class="card">
+  {% if tables %}
+  <table>
+    <thead><tr><th>Name</th><th>Description</th><th class="right">Records</th><th></th></tr></thead>
+    <tbody>
+    {% for t in tables %}
+      <tr>
+        <td><a href="/pricing/{{ t.id }}">{{ t.name }}</a></td>
+        <td class="small muted">{{ t.description }}</td>
+        <td class="right">{{ t.records | length }}</td>
+        <td class="right"><a class="btn small secondary" href="/pricing/{{ t.id }}">Open</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">No pricing tables yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

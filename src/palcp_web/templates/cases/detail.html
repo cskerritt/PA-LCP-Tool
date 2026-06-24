@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ case.name }}{% endblock %}
+{% block content %}
+
+<div class="actions" style="justify-content: space-between; align-items: flex-start;">
+  <div>
+    <h1 style="margin-bottom:.2rem;">{{ case.name }}</h1>
+    <div class="muted small">
+      {{ case.claimant_name or "No claimant" }}
+      {% if case.age_at_report is not none %} · age {{ case.age_at_report }}{% endif %}
+      {% if case.le_additional_years %} · LE {{ case.le_additional_years }} yr{% endif %}
+      {% if case.jurisdiction %} · {{ case.jurisdiction }}{% endif %}
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn secondary" href="/cases/{{ case.id }}/edit">Edit assumptions</a>
+    <a class="btn secondary" href="/cases/{{ case.id }}/history">History</a>
+    <form class="inline" method="post" action="/cases/{{ case.id }}/report">
+      <button class="btn" type="submit">Generate Excel report</button>
+    </form>
+  </div>
+</div>
+
+<div id="validation-block">
+  {% include "cases/_validation.html" %}
+</div>
+
+<h2>Care items</h2>
+<div id="items-section">
+  {% include "cases/_items_section.html" %}
+</div>
+
+<div class="row">
+  <div class="card">
+    <h3>Pricing tables</h3>
+    <p class="small muted">Link your pricing libraries to price items by code (e.g. VA Reasonable Charges, CMS DMEPOS).</p>
+    {% set linked = case.pricing_links %}
+    {% if linked %}
+      <ul>
+      {% for link in linked %}
+        <li>{{ link.pricing_table.name }}
+          <form class="inline" method="post" action="/cases/{{ case.id }}/pricing/{{ link.pricing_table_id }}/unlink">
+            <button class="link" style="color:var(--err);" type="submit">remove</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p class="small muted">None linked.</p>
+    {% endif %}
+    {% if all_pricing %}
+    <form method="post" action="/cases/{{ case.id }}/pricing/link" class="actions">
+      <select name="pricing_table_id">
+        {% for pt in all_pricing %}
+          {% if pt.id not in linked_ids %}<option value="{{ pt.id }}">{{ pt.name }}</option>{% endif %}
+        {% endfor %}
+      </select>
+      <button class="btn small" type="submit">Link</button>
+    </form>
+    {% else %}
+      <p class="small"><a href="/pricing/new">+ Create a pricing table</a></p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Apply a rate library</h3>
+    <p class="small muted">Copy a saved set of growth rates into this case.</p>
+    {% if rate_libs %}
+    <form method="post" action="/cases/{{ case.id }}/rates/apply" class="actions">
+      <select name="rate_library_id">
+        {% for lib in rate_libs %}<option value="{{ lib.id }}">{{ lib.name }}</option>{% endfor %}
+      </select>
+      <button class="btn small" type="submit">Apply</button>
+    </form>
+    {% else %}
+      <p class="small"><a href="/rates">+ Create a rate library</a></p>
+    {% endif %}
+  </div>
+</div>
+
+<h2>Generated reports</h2>
+<div class="card">
+  {% if case.reports %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Generated</th><th class="right">Current</th><th class="right">Nominal</th><th class="right">Present value</th><th>Validation</th><th></th></tr></thead>
+    <tbody>
+    {% for rep in case.reports %}
+      <tr>
+        <td class="nowrap">{{ rep.generated_on }}</td>
+        <td class="right">{{ rep.total_current | money0 }}</td>
+        <td class="right">{{ rep.total_nominal | money0 }}</td>
+        <td class="right"><strong>{{ rep.total_present_value | money0 }}</strong></td>
+        <td class="small">{{ rep.validation_summary }}</td>
+        <td class="nowrap">
+          <a class="btn small" href="/reports/{{ rep.id }}/download">Download</a>
+          <form class="inline" method="post" action="/reports/{{ rep.id }}/delete">
+            <button class="btn small danger" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <p class="muted">No reports generated yet. Click <strong>Generate Excel report</strong> above.</p>
+  {% endif %}
+</div>
+
+<div class="actions" style="margin-top:1.5rem;">
+  <form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Delete this case and all its data?');">
+    <button class="btn danger" type="submit">Delete case</button>
+  </form>
+</div>
+{% endblock %}

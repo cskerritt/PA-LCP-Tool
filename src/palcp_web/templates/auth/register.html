@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>Create your account</h1>
+  <form method="post" action="/register">
+    <label for="full_name">Full name</label>
+    <input id="full_name" name="full_name" type="text" autocomplete="name">
+    <label for="credentials">Credentials (appear on reports)</label>
+    <input id="credentials" name="credentials" type="text" placeholder="e.g. M.B.A., CRC, CLCP">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required>
+    <label for="password">Password (min 8 characters)</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" required>
+    <div class="actions">
+      <button class="btn" type="submit">Create account</button>
+      <a href="/login">I already have an account</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

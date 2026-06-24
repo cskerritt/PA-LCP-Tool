@@ -11,10 +11,15 @@ and **present value** — with every rate, source, percentile, and retrieval dat
 disclosed, and a built-in *Daubert pre-flight* that flags the defects courts most
 often cite when excluding life care plans.
 
-> **Phase 1 (this repository): the Python engine + CLI + Excel generator.**
-> A web application (the project's connected Supabase stack) is planned as a
-> follow-up that will wrap this engine — the engine is the Daubert-critical,
-> reusable core and is intentionally UI-agnostic.
+The repository contains two layers:
+
+- **`palcp`** — the Python cost-projection **engine + CLI + Excel generator**
+  (Phase 1). This is the Daubert-critical, reusable core and is UI-agnostic.
+- **`palcp_web`** — a **FastAPI + HTMX multi-user web app** (Phase 2) that wraps
+  the engine, backed by **PostgreSQL** and deployable to **Railway**. Manage
+  cases, care items, pricing libraries, and rate libraries in the browser;
+  generate and download the same Excel workbook. See
+  [Web app](#web-app-phase-2) and [`docs/DEPLOY_RAILWAY.md`](docs/DEPLOY_RAILWAY.md).
 
 ---
 
@@ -135,25 +140,64 @@ See [`docs/DATA_SCHEMA.md`](docs/DATA_SCHEMA.md). The bundled sample uses
   cited figures as of your report date.
 - Figures are only as current as the cited retrieval dates.
 
+## Web app (Phase 2)
+
+`palcp_web` is a single FastAPI service (server-rendered with Jinja + HTMX) that
+wraps the engine, with multi-user accounts and PostgreSQL persistence. Features:
+
+- email/password accounts with per-user data isolation;
+- a case dashboard; full assumptions editing (claimant, life expectancy, discount
+  rate, growth series);
+- care-item management (add/edit/delete inline, plus CSV/XLSX import);
+- **pricing libraries** (upload VA Reasonable Charges / CMS DMEPOS / MFUS / vendor
+  exports; link to a case to price items by code);
+- **rate libraries** (save reusable growth-rate sets and apply them to a case);
+- live Daubert validation and lifetime totals;
+- one-click **Excel report generation**, stored and downloadable per case;
+- an **edit history** (audit log) per case.
+
+Run it locally:
+
+```bash
+python -m pip install -e ".[web,dev]"
+export SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(48))")
+export SESSION_HTTPS_ONLY=0          # allow cookies over http://localhost
+alembic upgrade head                 # defaults to a local SQLite db
+uvicorn palcp_web.main:app --reload  # → http://127.0.0.1:8000
+```
+
+Deploy to Railway (Dockerfile + Postgres plugin): see
+[`docs/DEPLOY_RAILWAY.md`](docs/DEPLOY_RAILWAY.md). The container runs
+`alembic upgrade head` then `uvicorn` on `$PORT`; the Postgres `DATABASE_URL` is
+picked up automatically and rewritten for the psycopg 3 driver.
+
 ## Development
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,web]"
 python -m pytest
 ```
 
 ## Project layout
 
 ```
-src/palcp/
-  models.py            # dataclasses: Plan, CareItem, rates, life expectancy
-  config.py            # load assumptions (YAML) + items (CSV/XLSX) -> Plan
-  validate.py          # Daubert / FRE 702 pre-flight checks
-  economics/           # projection engine, timing, life table
-  pricing/             # canonical schema, vendor loaders, code resolution
-  workbook/            # openpyxl styles, multi-tab builder, narrative content
-  cli.py               # `palcp` command-line interface
-  data/                # templates + synthetic sample inputs
-docs/                  # METHODOLOGY, DATA_SCHEMA, DEFENSIBILITY
-tests/                 # pytest suite
+src/palcp/             # Phase 1 — engine
+  models.py            #   dataclasses: Plan, CareItem, rates, life expectancy
+  config.py            #   load assumptions (YAML) + items (CSV/XLSX) -> Plan
+  validate.py          #   Daubert / FRE 702 pre-flight checks
+  economics/           #   projection engine, timing, life table
+  pricing/             #   canonical schema, vendor loaders, code resolution
+  workbook/            #   openpyxl styles, multi-tab builder, narrative content
+  cli.py               #   `palcp` command-line interface
+  data/                #   templates + synthetic sample inputs
+src/palcp_web/         # Phase 2 — FastAPI + HTMX web app
+  models.py            #   SQLAlchemy models (users, cases, items, libraries…)
+  routers/             #   auth, cases, items, pricing, rates, reports
+  services.py          #   bridge: DB case -> palcp engine -> workbook
+  templates/, static/  #   Jinja templates + CSS
+  main.py, db.py, …    #   app, session/db, security, config
+alembic/               # database migrations
+Dockerfile, railway.json, scripts/start.sh   # Railway deployment
+docs/                  # METHODOLOGY, DATA_SCHEMA, DEFENSIBILITY, DEPLOY_RAILWAY
+tests/                 # pytest suite (engine + web)
 ```

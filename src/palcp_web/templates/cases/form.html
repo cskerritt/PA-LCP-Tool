@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit case" if case else "New case" }}{% endblock %}
+{% block content %}
+
+{% if not case %}
+  <h1>New case</h1>
+  <div class="card">
+    <form method="post" action="/cases">
+      <label for="name">Case name / caption</label>
+      <input id="name" name="name" required placeholder="e.g. Doe v. Roe, No. 0:00-cv-00000">
+      <div class="actions">
+        <button class="btn" type="submit">Create case</button>
+        <a class="btn secondary" href="/">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% else %}
+  <h1>Edit assumptions — {{ case.name }}</h1>
+  <form method="post" action="/cases/{{ case.id }}">
+    <fieldset>
+      <legend>Matter & evaluator</legend>
+      <div class="row">
+        <div><label>Case name / caption</label><input name="name" value="{{ case.name }}"></div>
+        <div><label>Jurisdiction / standard</label><input name="jurisdiction" value="{{ case.jurisdiction }}" placeholder="e.g. E.D. Pa.; Daubert"></div>
+      </div>
+      <div class="row">
+        <div><label>Evaluator</label><input name="evaluator" value="{{ case.evaluator }}"></div>
+        <div><label>Credentials</label><input name="evaluator_credentials" value="{{ case.evaluator_credentials }}"></div>
+      </div>
+      <div class="row">
+        <div><label>Report date</label><input name="report_date" value="{{ case.report_date }}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Base year</label><input name="base_year" value="{{ case.base_year or '' }}" placeholder="2026"></div>
+        <div><label>Reasonable-value percentile</label><input name="percentile_policy" value="{{ case.percentile_policy }}"></div>
+      </div>
+      <label>Collateral-source note</label>
+      <textarea name="collateral_source_note">{{ case.collateral_source_note }}</textarea>
+    </fieldset>
+
+    <fieldset>
+      <legend>Claimant</legend>
+      <div class="row">
+        <div><label>Name</label><input name="claimant_name" value="{{ case.claimant_name }}"></div>
+        <div><label>Date of birth</label><input name="claimant_dob" value="{{ case.claimant_dob }}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Sex (for life table)</label>
+          <select name="claimant_sex">
+            {% for s in ["total","male","female"] %}
+            <option value="{{ s }}" {{ "selected" if case.claimant_sex == s }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Age at report</label><input name="age_at_report" value="{{ case.age_at_report if case.age_at_report is not none else '' }}"></div>
+        <div style="flex:2 1 400px;"><label>Residence / geographic basis</label><input name="residence" value="{{ case.residence }}"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Life expectancy</legend>
+      <div class="row">
+        <div><label>Additional years</label><input name="le_additional_years" value="{{ case.le_additional_years }}"></div>
+        <div><label>As of</label><input name="le_as_of" value="{{ case.le_as_of }}"></div>
+      </div>
+      <label>Source</label><input name="le_source" value="{{ case.le_source }}" placeholder="e.g. CDC/NCHS U.S. Life Tables, 20XX, Table B">
+      <div class="row">
+        <div><label>Citation URL</label><input name="le_citation_url" value="{{ case.le_citation_url }}"></div>
+        <div><label>Note</label><input name="le_note" value="{{ case.le_note }}" placeholder="Unimpaired; not medically reduced"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Discount rate</legend>
+      <div class="row">
+        <div><label>Annual rate (decimal)</label><input name="discount_rate" value="{{ case.discount_rate }}" placeholder="0.043"></div>
+        <div><label>Basis</label>
+          <select name="discount_basis">
+            {% for b in ["nominal","real"] %}<option value="{{ b }}" {{ "selected" if case.discount_basis == b }}>{{ b }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Timing</label>
+          <select name="discount_timing">
+            {% for t in ["begin_year","mid_year","end_year"] %}<option value="{{ t }}" {{ "selected" if case.discount_timing == t }}>{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <label>Source</label><input name="discount_source" value="{{ case.discount_source }}" placeholder="e.g. U.S. Treasury 20-Year Constant Maturity (H.15)">
+      <div class="row">
+        <div><label>Citation URL</label><input name="discount_citation_url" value="{{ case.discount_citation_url }}"></div>
+        <div><label>As of</label><input name="discount_as_of" value="{{ case.discount_as_of }}"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Growth (medical inflation) series</legend>
+      <p class="small muted">Each care item references one of these by its growth key. Replace placeholder sources with cited figures.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Key</th><th>Series</th><th>Annual rate</th><th>Source</th><th>As of</th></tr></thead>
+        <tbody>
+        {% for gr in case.growth_rates | sort(attribute='key') %}
+          <tr>
+            <td class="nowrap">{{ gr.key }}</td>
+            <td>{{ gr.label }}</td>
+            <td><input name="gr_{{ gr.key }}_rate" value="{{ gr.annual_rate }}" style="width:6rem"></td>
+            <td><input name="gr_{{ gr.key }}_source" value="{{ gr.source }}"></td>
+            <td><input name="gr_{{ gr.key }}_as_of" value="{{ gr.as_of }}" style="width:6rem"></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button class="btn" type="submit">Save assumptions</button>
+      <a class="btn secondary" href="/cases/{{ case.id }}">Cancel</a>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}

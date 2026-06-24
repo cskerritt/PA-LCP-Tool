@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}New pricing table{% endblock %}
+{% block content %}
+<h1>New pricing table</h1>
+<form method="post" action="/pricing" enctype="multipart/form-data" class="card">
+  <label>Name *</label><input name="name" required placeholder="e.g. VA Reasonable Charges 2026">
+  <label>Description</label><input name="description">
+  <div class="row">
+    <div>
+      <label>Loader preset (for vendor column layouts)</label>
+      <select name="preset">
+        {% for p in presets %}<option value="{{ p }}">{{ p or "— canonical columns —" }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>File (CSV / XLSX), optional</label>
+      <input type="file" name="file" accept=".csv,.xlsx,.xlsm">
+    </div>
+  </div>
+  <p class="small muted">Canonical columns: source, code, code_type, description, amount, percentile, geographic_area, effective_date, citation_url. Presets map common vendor headers.</p>
+  <div class="actions">
+    <button class="btn" type="submit">Create</button>
+    <a class="btn secondary" href="/pricing">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Rate libraries{% endblock %}
+{% block content %}
+<h1>Rate libraries</h1>
+<p class="muted small">Save reusable sets of growth (medical-inflation) rates with their sources, then apply them to any case.</p>
+
+<div class="card">
+  <h3>New rate library</h3>
+  <form method="post" action="/rates" class="actions">
+    <input name="name" required placeholder="e.g. 2026 standard medical inflation">
+    <input name="description" placeholder="description (optional)">
+    <button class="btn" type="submit">Create</button>
+  </form>
+</div>
+
+<div class="card">
+  {% if libraries %}
+  <table>
+    <thead><tr><th>Name</th><th>Description</th><th>Entries</th><th></th></tr></thead>
+    <tbody>
+    {% for lib in libraries %}
+      <tr>
+        <td><a href="/rates/{{ lib.id }}">{{ lib.name }}</a></td>
+        <td class="small muted">{{ lib.description }}</td>
+        <td>{{ lib.entries | length }}</td>
+        <td class="right"><a class="btn small secondary" href="/rates/{{ lib.id }}">Edit</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">No rate libraries yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

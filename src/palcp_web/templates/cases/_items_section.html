@@ -1,0 +1,95 @@
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th><th>Item</th><th>Code</th><th>Source</th>
+        <th class="right">Unit $</th><th>Schedule</th><th>Ages</th><th>Growth</th>
+        <th>Found.</th><th class="right">Present value</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in case.items %}
+      {% set res = result.item_results[loop.index0] %}
+      <tr>
+        <td class="small">{{ row.category }}</td>
+        <td>{{ row.item }}</td>
+        <td class="small">{{ res.item.code }}</td>
+        <td class="small">{{ res.item.pricing_source }}{% if res.item.percentile is not none %} ({{ res.item.percentile }}){% endif %}</td>
+        <td class="right">{{ res.item.unit_cost | money }}</td>
+        <td class="small">
+          {%- if row.one_time %}once @ {{ row.one_time_age }}
+          {%- elif row.every_n_years %}every {{ row.every_n_years }}yr
+          {%- elif row.frequency_per_year %}{{ row.frequency_per_year }}/yr{% endif -%}
+        </td>
+        <td class="small nowrap">{{ row.start_age if row.start_age is not none else "—" }}–{{ row.end_age if row.end_age is not none else "LE" }}</td>
+        <td class="small">{{ row.growth_key }}</td>
+        <td>{% if row.medical_foundation %}<span class="badge b-ok">✓</span>{% else %}<span class="badge b-warn">!</span>{% endif %}</td>
+        <td class="right">{{ res.present_value | money0 }}</td>
+        <td class="nowrap">
+          <a class="btn small secondary" href="/cases/{{ case.id }}/items/{{ row.id }}/edit">Edit</a>
+          <button class="btn small danger" hx-post="/cases/{{ case.id }}/items/{{ row.id }}/delete"
+                  hx-target="#items-section" hx-swap="innerHTML"
+                  hx-confirm="Delete this item?">×</button>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="11" class="muted">No care items yet — add one below.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if case.items %}
+    <tfoot>
+      <tr>
+        <td colspan="9" class="right">Lifetime present value</td>
+        <td class="right">{{ result.grand_total_present_value | money0 }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Add care item</h3>
+  <form hx-post="/cases/{{ case.id }}/items" hx-target="#items-section" hx-swap="innerHTML">
+    <div class="row">
+      <div><label>Category</label><input name="category" placeholder="e.g. Physician Services"></div>
+      <div style="flex:2 1 320px;"><label>Item *</label><input name="item" required></div>
+      <div><label>Growth key</label>
+        <select name="growth_key">{% for k in growth_keys %}<option value="{{ k }}">{{ k }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Code (CPT/HCPCS)</label><input name="code"></div>
+      <div><label>Pricing source</label><input name="pricing_source" placeholder="e.g. MFUS 80th %ile"></div>
+      <div><label>Percentile</label><input name="percentile" placeholder="80"></div>
+      <div><label>Geographic basis</label><input name="geographic_basis"></div>
+      <div><label>Retrieval date</label><input name="retrieval_date" placeholder="YYYY-MM-DD"></div>
+    </div>
+    <div class="row">
+      <div><label>Unit cost ($, current)</label><input name="unit_cost" placeholder="0 = price by code"></div>
+      <div><label>Units / occurrence</label><input name="units_per_occurrence" value="1"></div>
+      <div><label>Frequency / year</label><input name="frequency_per_year" placeholder="recurring"></div>
+      <div><label>Every N years</label><input name="every_n_years" placeholder="periodic"></div>
+    </div>
+    <div class="row">
+      <div><label>One-time?</label><label class="small"><input type="checkbox" name="one_time" value="1"> single event</label></div>
+      <div><label>One-time age</label><input name="one_time_age"></div>
+      <div><label>Start age</label><input name="start_age"></div>
+      <div><label>End age</label><input name="end_age" placeholder="blank = to LE"></div>
+    </div>
+    <label>Medical foundation (treating-provider citation)</label>
+    <input name="medical_foundation" placeholder="e.g. Treating PM&R physician, office note 2026-02-10, p.3">
+    <label>Notes</label><input name="notes">
+    <div class="actions"><button class="btn" type="submit">Add item</button></div>
+  </form>
+
+  <hr style="margin:1rem 0; border:0; border-top:1px solid var(--rule);">
+  <h3>Import from CSV / XLSX</h3>
+  <form method="post" action="/cases/{{ case.id }}/import-items" enctype="multipart/form-data" class="actions">
+    <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+    <button class="btn secondary" type="submit">Import items</button>
+    <span class="small muted">Columns per the plan-items template (category, item, unit_cost, …).</span>
+  </form>
+</div>
