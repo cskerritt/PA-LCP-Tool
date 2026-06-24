@@ -29,8 +29,13 @@ class Resolution:
 
 
 def _score(record: PriceRecord, item: CareItem) -> tuple:
-    """Higher tuples sort first: prefer source match, then percentile match,
-    then geographic match, then a defined percentile, then higher amount."""
+    """Higher tuples sort first. Locality (exact ZIP3) beats National; an exact
+    source/percentile match still matters; amount is the final, weakest tiebreak
+    (negated, so ties are stable and never bias toward a pricier row)."""
+    geo = (record.geographic_area or "").strip().lower()
+    want_geo = (item.geographic_basis or "").strip().lower()
+    exact_geo = int(bool(want_geo) and want_geo == geo)
+    is_national = int(geo in ("national", "nation", "us", ""))
     src_match = int(
         bool(item.pricing_source)
         and item.pricing_source.lower() in (record.source or "").lower()
@@ -40,12 +45,9 @@ def _score(record: PriceRecord, item: CareItem) -> tuple:
         and record.percentile is not None
         and abs(record.percentile - item.percentile) < 1e-6
     )
-    geo_match = int(
-        bool(item.geographic_basis)
-        and item.geographic_basis.lower() in (record.geographic_area or "").lower()
-    )
-    has_pct = int(record.percentile is not None)
-    return (src_match, pct_match, geo_match, has_pct, record.amount)
+    # exact locality first, then a national fallback, then source/pct, then a
+    # *lower* amount (negated) so ties are stable and never bias upward.
+    return (exact_geo, is_national, src_match, pct_match, -record.amount)
 
 
 def resolve_item(
