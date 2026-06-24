@@ -35,10 +35,10 @@ def lookup_code(case_id: int, request: Request, code: str, code_type: str = "",
     setting = va_setting or setting
     zip3 = case.geo_zip3 or ""
 
-    combos = va_pricing.va_combinations(code, zip3, setting=setting)
-    if combos:
+    best = va_pricing.va_charge_for(code, zip3, setting=setting)
+    if best is not None:
         ds = va_pricing.get_va_dataset()
-        best = min(combos, key=lambda c: 0 if c.table == "G" else 1)
+        combos = va_pricing.va_combinations(code, zip3, setting=setting)
         probe = _care_item(CareItemRow(
             category="", item="probe", code=code, code_type="CPT/HCPCS",
             geographic_basis=best.zip3 or zip3, unit_cost=best.amount,

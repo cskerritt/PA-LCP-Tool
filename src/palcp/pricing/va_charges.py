@@ -24,6 +24,14 @@ from typing import Optional
 from .schema import normalize_code
 
 
+def normalize_zip3(value) -> str:
+    """First 3 digits of a ZIP, zero-padded (e.g. 5 -> '005', '19103' -> '191')."""
+    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+    if not digits:
+        return ""
+    return digits[:3].zfill(3) if len(digits) >= 3 else digits.zfill(3)
+
+
 @dataclass(frozen=True)
 class VAChargeBasis:
     """One national charge basis for a code in one VA table."""
@@ -84,7 +92,7 @@ class VADataset:
         return self.bases.get(normalize_code(code), [])
 
     def gaaf_for(self, table: str, zip3: str, category: Optional[str]) -> Optional[float]:
-        return self.gaaf.get((table, str(zip3), category))
+        return self.gaaf.get((table, normalize_zip3(zip3), category))
 
 
 def _rvu_total(b: VAChargeBasis, setting: str) -> Optional[float]:
@@ -105,7 +113,7 @@ def compute_charge(
     modifier: Optional[str] = None,
 ) -> list[VACharge]:
     """Return one :class:`VACharge` per basis the code has (possibly empty)."""
-    zip3 = str(zip3 or "")
+    zip3 = normalize_zip3(zip3)
     results: list[VACharge] = []
     for b in ds.bases_for(code):
         if b.is_direct:
@@ -145,6 +153,18 @@ def compute_charge(
 # LCP relevance order for picking a single charge when a bare code is looked up.
 _LCP_TABLE_PRIORITY = {"G": 0, "J": 1, "F": 2, "K": 3, "I": 4, "E": 5,
                        "H": 6, "C": 7, "D": 8, "A": 9, "B": 10}
+# Radiology/imaging codes (CPT 70000-79999) are costed at the global/facility
+# charge in an LCP, so prefer the outpatient-facility (F) table over the
+# professional-only read (G).
+_RADIOLOGY_PRIORITY = {"F": 0, "G": 1, "J": 2, "K": 3, "I": 4, "E": 5,
+                       "H": 6, "C": 7, "D": 8, "A": 9, "B": 10}
+
+
+def _is_radiology(code: str) -> bool:
+    digits = "".join(ch for ch in str(code or "") if ch.isdigit())
+    if len(digits) != 5:
+        return False
+    return 70000 <= int(digits) <= 79999
 
 
 def best_charge(
@@ -153,10 +173,12 @@ def best_charge(
 ) -> Optional[VACharge]:
     """Pick the most LCP-relevant single charge for a bare code lookup.
 
-    Professional (G) first for office/therapy codes, then lab, facility, DME, etc.
+    Radiology (CPT 70000-79999) prefers the outpatient-facility/global charge;
+    everything else prefers the professional charge, then lab, facility, DME, etc.
     Returns ``None`` if the code has no VA basis.
     """
     charges = compute_charge(ds, code, zip3, setting=setting, modifier=modifier)
     if not charges:
         return None
-    return min(charges, key=lambda c: _LCP_TABLE_PRIORITY.get(c.table, 99))
+    order = _RADIOLOGY_PRIORITY if _is_radiology(code) else _LCP_TABLE_PRIORITY
+    return min(charges, key=lambda c: order.get(c.table, 99))

@@ -71,6 +71,42 @@ def test_modifier_multiplies():
     assert c.amount == 3075.35          # 2050.2342 * 1.5 -> 3075.3513 -> 3075.35
 
 
+def _ds_multi():
+    """A code present in both professional (G) and outpatient-facility (F)."""
+    ds = _ds()
+    ds.bases["72148"] = [
+        VAChargeBasis(code="72148", table="G", charge_type="Physician/Professional",
+                      description="MRI read", total_expense_rvu=4.0,
+                      cf_category="Radiology", gaaf_table="L", gaaf_category="Radiology"),
+        VAChargeBasis(code="72148", table="F", charge_type="Outpatient Facility",
+                      description="MRI facility", charge=1627.17, gaaf_table="P"),
+    ]
+    ds.bases["99215"] = [
+        VAChargeBasis(code="99215", table="G", charge_type="Physician/Professional",
+                      description="Office visit", total_expense_rvu=2.0,
+                      cf_category="Office/Home/Urgent Care Visits", gaaf_table="L",
+                      gaaf_category="Office/Home/Urgent Care Visits"),
+        VAChargeBasis(code="99215", table="F", charge_type="Outpatient Facility",
+                      description="Office facility", charge=300.0, gaaf_table="P"),
+    ]
+    ds.cf["Radiology"] = 221.52
+    ds.gaaf[("L", "191", "Radiology")] = 1.59
+    return ds
+
+
+def test_best_charge_radiology_prefers_facility():
+    from palcp.pricing.va_charges import best_charge
+    c = best_charge(_ds_multi(), "72148", "191")   # CPT 70000-79999 -> facility
+    assert c.table == "F"
+    assert c.amount == 2050.23
+
+
+def test_best_charge_nonradiology_prefers_professional():
+    from palcp.pricing.va_charges import best_charge
+    c = best_charge(_ds_multi(), "99215", "191")   # E/M -> professional
+    assert c.table == "G"
+
+
 def test_missing_locality_falls_back_to_national():
     (c,) = compute_charge(_ds(), "72148", "999")   # no 999 in gaaf table
     assert c.gaaf == 1.0
