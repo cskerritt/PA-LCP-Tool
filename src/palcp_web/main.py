@@ -35,6 +35,13 @@ async def lifespan(app: FastAPI):
         logger.warning(
             "SECRET_KEY is not set; using a random per-process key. Set SECRET_KEY "
             "in the environment so sessions survive restarts.")
+    try:
+        from .db import SessionLocal
+        from .services import ensure_default_va_library
+        with SessionLocal() as db:
+            ensure_default_va_library(db)
+    except Exception:  # pragma: no cover - never block startup on seeding
+        logger.exception("Could not seed default VA pricing library")
     yield
 
 

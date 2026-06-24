@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -19,7 +19,12 @@ from ..models import (
     User,
 )
 from ..security import current_user, record_audit
-from ..services import GROWTH_KEYS, compute_case, seed_growth_rate_rows
+from ..services import (
+    GROWTH_KEYS,
+    compute_case,
+    ensure_default_va_library,
+    seed_growth_rate_rows,
+)
 from ..templating import flash, render, render_partial
 
 router = APIRouter()
@@ -88,6 +93,11 @@ def create_case(request: Request, user: User = Depends(current_user),
     case.growth_rates = seed_growth_rate_rows(case)
     db.add(case)
     db.flush()
+    # Auto-link the system-wide default VA Reasonable Charges library so every
+    # new case is priced from VA UCR with zero setup.
+    va = ensure_default_va_library(db)
+    db.add(CasePricingLink(case_id=case.id, pricing_table_id=va.id))
+    db.flush()
     record_audit(db, user_id=user.id, case_id=case.id, entity="case",
                  entity_id=case.id, action="create", summary=f"Created case '{case.name}'")
     db.commit()
@@ -102,7 +112,9 @@ def case_detail(case_id: int, request: Request, user: User = Depends(current_use
     case = get_owned_case(db, user, case_id)
     comp = compute_case(case)
     all_pricing = db.scalars(
-        select(PricingTable).where(PricingTable.user_id == user.id)).all()
+        select(PricingTable).where(
+            or_(PricingTable.user_id == user.id, PricingTable.is_system.is_(True)))
+        .order_by(PricingTable.is_system.desc())).all()
     linked_ids = {link.pricing_table_id for link in case.pricing_links}
     rate_libs = db.scalars(
         select(RateLibrary).where(RateLibrary.user_id == user.id)).all()

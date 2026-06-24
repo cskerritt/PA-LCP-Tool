@@ -36,3 +36,24 @@ def test_models_have_new_columns():
     assert hasattr(PricingTable, "is_system")
     assert hasattr(PricingTable, "version")
     assert hasattr(PricingTable, "effective_date")
+
+
+def test_default_va_library_seeded_and_autolinked():
+    from palcp_web.db import SessionLocal
+    from palcp_web.services import ensure_default_va_library
+    from palcp_web.models import PricingTable, CasePricingLink
+    db = SessionLocal()
+    table = ensure_default_va_library(db)
+    assert table.is_system is True
+    assert "VA Reasonable Charges" in table.name
+    assert len(table.records) >= 4          # from the SAMPLE seed
+    db.close()
+
+    c = TestClient(app)
+    _register(c, "va@example.com")
+    cid = _make_case(c, "Autolink Case")
+    db = SessionLocal()
+    links = db.query(CasePricingLink).filter(CasePricingLink.case_id == cid).all()
+    linked_tables = [db.get(PricingTable, l.pricing_table_id) for l in links]
+    assert any(t.is_system for t in linked_tables)   # VA auto-linked
+    db.close()

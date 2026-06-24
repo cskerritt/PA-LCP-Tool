@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -23,7 +23,7 @@ PRESETS = ["", "va_reasonable_charges", "cms_dmepos", "mfus"]
 
 def _owned_table(db: Session, user: User, table_id: int) -> PricingTable:
     pt = db.get(PricingTable, table_id)
-    if pt is None or pt.user_id != user.id:
+    if pt is None or (pt.user_id != user.id and not pt.is_system):
         raise HTTPException(status_code=404)
     return pt
 
@@ -51,8 +51,10 @@ def _ingest(db: Session, table: PricingTable, data: bytes, filename: str,
 def list_pricing(request: Request, user: User = Depends(current_user),
                  db: Session = Depends(get_db)):
     tables = db.scalars(
-        select(PricingTable).where(PricingTable.user_id == user.id)
-        .order_by(PricingTable.updated_at.desc())).all()
+        select(PricingTable).where(
+            or_(PricingTable.user_id == user.id, PricingTable.is_system.is_(True)))
+        .order_by(PricingTable.is_system.desc(),
+                  PricingTable.updated_at.desc())).all()
     return render(request, "pricing/list.html", user=user, tables=tables,
                   presets=PRESETS)
 
@@ -121,6 +123,9 @@ def delete_pricing(table_id: int, request: Request,
                    user: User = Depends(current_user),
                    db: Session = Depends(get_db)):
     table = _owned_table(db, user, table_id)
+    if table.is_system:
+        flash(request, "The default VA library is read-only.", "error")
+        return RedirectResponse("/pricing", status_code=303)
     name = table.name
     db.delete(table)
     db.commit()

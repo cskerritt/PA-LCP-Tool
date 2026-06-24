@@ -8,6 +8,12 @@ workbook -- reusing exactly the Daubert-oriented logic the CLI uses.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from palcp.pricing.va import SEED_PATH, load_va_outpatient
 
 from palcp import (
     CareItem,
@@ -28,11 +34,53 @@ from palcp import (
 from palcp.config import DEFAULT_GROWTH_KEYS, default_growth_rates
 from palcp.economics.projection import ProjectionResult
 
-from .models import Case, CaseGrowthRate, CareItemRow
+from .models import Case, CaseGrowthRate, CareItemRow, PriceRecordRow
+from .models import PricingTable as PricingTableRow
 
 # Canonical growth-series keys, in display order (single source of truth shared
 # by the cases and items routers and their templates).
 GROWTH_KEYS = list(DEFAULT_GROWTH_KEYS.keys())
+
+VA_DEFAULT_VERSION = "v5.26"
+VA_DEFAULT_EFFECTIVE = "2026-01-01"
+
+
+def _va_source_path() -> Path:
+    """Prefer a normalized official CSV if present (gitignored), else the seed."""
+    official = Path("data/va_charges_normalized.csv")  # produced by fetch script
+    return official if official.exists() else SEED_PATH
+
+
+def ensure_default_va_library(db: Session) -> PricingTableRow:
+    """Create or return the system-wide default VA pricing library (idempotent)."""
+    existing = db.scalar(
+        select(PricingTableRow).where(PricingTableRow.is_system.is_(True))
+        .order_by(PricingTableRow.id.desc()))
+    if existing is not None and existing.records:
+        return existing
+
+    src = _va_source_path()
+    loaded = load_va_outpatient(src, version=VA_DEFAULT_VERSION,
+                                effective_date=VA_DEFAULT_EFFECTIVE)
+    label = "VA Reasonable Charges " + VA_DEFAULT_VERSION
+    if loaded.records and "SAMPLE" in (loaded.records[0].source or ""):
+        label += " (SAMPLE — load official data)"
+    table = existing or PricingTableRow(
+        user_id=None, is_system=True, name=label,
+        version=VA_DEFAULT_VERSION, effective_date=VA_DEFAULT_EFFECTIVE,
+        description="Auto-loaded default. Public VA outpatient/professional "
+                    "reasonable charges.")
+    if existing is None:
+        db.add(table)
+        db.flush()
+    for r in loaded.records:
+        db.add(PriceRecordRow(
+            table_id=table.id, source=r.source, code=r.code, code_type=r.code_type,
+            description=r.description, amount=r.amount, percentile=r.percentile,
+            geographic_area=r.geographic_area, effective_date=r.effective_date,
+            citation_url=r.citation_url))
+    db.commit()
+    return table
 
 
 def seed_growth_rate_rows(case: Case) -> list[CaseGrowthRate]:
