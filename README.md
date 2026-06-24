@@ -154,7 +154,40 @@ wraps the engine, with multi-user accounts and PostgreSQL persistence. Features:
 - **rate libraries** (save reusable growth-rate sets and apply them to a case);
 - live Daubert validation and lifetime totals;
 - one-click **Excel report generation**, stored and downloadable per case;
-- an **edit history** (audit log) per case.
+- an **edit history** (audit log) per case;
+- a **default VA Reasonable Charges (UCR) pricing library**, auto-linked to every
+  new case, with **type-a-code auto-fill** and a **common-items catalog** so you
+  enter the minimum per item (see below).
+
+### VA Reasonable Charges (default pricing) + minimal data entry
+
+Every new case is automatically linked to a system-wide **VA Reasonable Charges**
+library and prices line items by CPT/HCPCS code. To minimize data entry:
+
+- set the claimant's **3-digit ZIP** on the case (the VA pricing locality);
+- type a CPT/HCPCS code in the add-item form, or click **Add from common items** —
+  the **price, description, code type, source, percentile, geographic basis,
+  retrieval/effective date, category, and growth class** auto-fill from the VA
+  library at the case's locality. You then set frequency/timing and the medical
+  foundation. Unmatched codes are flagged, never guessed.
+
+The tool ships a small, clearly-labeled **SAMPLE** seed so it runs out of the box.
+To price from **real** VA charges, download the official VA outpatient/professional
+workbook (after accepting the VA's AMA CPT-Code disclaimer — a click you are
+entitled to make) and ingest it:
+
+```bash
+python scripts/fetch_va_charges.py \
+  --outpatient ~/Downloads/va_outpatient.xlsx \
+  --version v5.26 --effective 2026-01-01 \
+  --out data/va_charges_normalized.csv
+# restart the app: the default VA library reloads from the normalized CSV
+```
+
+The normalized CSV is **gitignored** — CPT® is AMA-copyrighted, and your CPT
+license governs internal use. Only the labeled SAMPLE seed is committed. The VA
+version, effective date, and locality are disclosed on the workbook's Data Sources
+tab.
 
 Run it locally:
 

@@ -100,9 +100,23 @@ palcp build ... --pricing va_export.xlsx:va_reasonable_charges dmepos.csv:cms_dm
 ### Resolution order
 
 For an item with a `code` but no direct `unit_cost`, the best record is chosen by:
-matching `pricing_source` → matching `percentile` → matching `geographic_basis` →
-having a defined percentile → highest amount. The chosen source, percentile,
-geography, and effective date are back-filled onto the item for the audit trail.
+**exact locality (3-digit ZIP) match → national fallback → matching
+`pricing_source` → matching `percentile` → lower amount (stable tiebreak, never
+biased upward)**. The chosen source, percentile, geography, effective date,
+**description, category, and growth class** are back-filled onto the item for the
+audit trail (only fields left blank are filled). Unmatched codes are left
+unresolved (cost 0) and flagged — never guessed.
+
+### VA Reasonable Charges (default) + per-case locality
+
+The web app links a system-wide **VA Reasonable Charges** library to every new
+case. Each case carries a **`geo_zip3`** (3-digit ZIP) that sets the VA pricing
+locality; care items without their own `geographic_basis` inherit it. A curated
+**common-items catalog** (`src/palcp/data/common_items.yaml`) adds a fully-coded
+line in one click — it carries codes/categories/growth keys but **no prices**
+(prices come from the VA library at the case's locality). Load real VA data via
+`scripts/fetch_va_charges.py` (see the README); the bundled `va_charges_seed.csv`
+is a labeled SAMPLE only.
 
 ---
 
