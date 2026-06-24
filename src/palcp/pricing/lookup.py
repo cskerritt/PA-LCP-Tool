@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ..models import CareItem
+from .growth_map import category_hint, growth_key_for
 from .schema import PriceRecord, PricingTable
 
 
@@ -100,5 +101,14 @@ def apply_pricing(
                 item.percentile = res.record.percentile
             if not item.retrieval_date:
                 item.retrieval_date = res.record.effective_date
+            if not item.description and res.record.description:
+                item.description = res.record.description
+            if (not item.category) or item.category == "Uncategorized":
+                hint = category_hint(item.code, item.code_type or res.record.code_type)
+                if hint != "Uncategorized":
+                    item.category = hint
+            if (not item.growth_key) or item.growth_key == "medical_services":
+                item.growth_key = growth_key_for(
+                    item.code, item.code_type or res.record.code_type)
         resolutions.append(res)
     return resolutions
