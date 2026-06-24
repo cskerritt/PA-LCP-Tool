@@ -13,6 +13,7 @@ os.environ["DATABASE_URL"] = "sqlite:///" + tempfile.NamedTemporaryFile(
     suffix=".db", delete=False).name
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["SESSION_HTTPS_ONLY"] = "0"  # allow cookies over the test client's http
+os.environ["PALCP_VA_DATASET"] = ""  # hermetic: no VA dataset in unit tests
 
 from fastapi.testclient import TestClient  # noqa: E402
 

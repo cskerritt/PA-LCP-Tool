@@ -190,12 +190,16 @@ def plan_from_case(case: Case) -> Plan:
     )
 
 
-def pricing_table_from_case(case: Case) -> PricingTable:
-    """Build a combined :class:`palcp.PricingTable` from the case's linked tables."""
+def pricing_table_from_case(case: Case, *, include_system: bool = True) -> PricingTable:
+    """Build a combined :class:`palcp.PricingTable` from the case's linked tables.
+
+    When the real VA dataset is driving pricing, pass ``include_system=False`` to
+    skip the flat SAMPLE library and use only user-linked tables (vendor surveys).
+    """
     table = PricingTable()
     for link in case.pricing_links:
         pt = link.pricing_table
-        if pt is None:
+        if pt is None or (not include_system and pt.is_system):
             continue
         for r in pt.records:
             table.add(PriceRecord(
@@ -220,11 +224,25 @@ class CaseComputation:
 
 
 def compute_case(case: Case) -> CaseComputation:
-    """Resolve pricing, validate, and project a case (no workbook)."""
+    """Resolve pricing, validate, and project a case (no workbook).
+
+    Prefers the full VA charge dataset (localized to the case ZIP, per-item
+    setting) when it is built; otherwise uses the linked flat libraries (incl. the
+    SAMPLE seed). Any remaining unpriced items fall back to user-linked vendor
+    tables.
+    """
+    from . import va_pricing
+
     plan = plan_from_case(case)
-    table = pricing_table_from_case(case)
-    if len(table):
-        apply_pricing(plan.items, table)
+    used_va = va_pricing.apply_va_pricing(case, plan.items)
+    if used_va:
+        vendor = pricing_table_from_case(case, include_system=False)
+        if len(vendor):
+            apply_pricing(plan.items, vendor)
+    else:
+        table = pricing_table_from_case(case)
+        if len(table):
+            apply_pricing(plan.items, table)
     validation = validate_plan(plan)
     result = project(plan)
     return CaseComputation(plan=plan, validation=validation, result=result)

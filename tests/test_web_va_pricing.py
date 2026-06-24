@@ -9,6 +9,7 @@ os.environ["DATABASE_URL"] = "sqlite:///" + tempfile.NamedTemporaryFile(
     suffix=".db", delete=False).name
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["SESSION_HTTPS_ONLY"] = "0"
+os.environ["PALCP_VA_DATASET"] = ""  # hermetic: use the labeled SAMPLE seed
 
 from fastapi.testclient import TestClient  # noqa: E402
 

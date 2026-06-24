@@ -19,6 +19,14 @@
              hx-include="this" hx-target="#lookup-sink" hx-swap="innerHTML">
       <span id="lookup-status" class="small muted"></span></div>
     <div><label>Code type</label><input name="code_type" id="f_code_type" value="{{ item.code_type }}"></div>
+    <div><label>VA setting</label>
+      <select name="va_setting"
+              hx-get="/cases/{{ case.id }}/lookup-code"
+              hx-trigger="change" hx-include="#f_code, this"
+              hx-target="#lookup-sink" hx-swap="innerHTML">
+        <option value="non_facility" {{ "selected" if (item.va_setting or "non_facility") == "non_facility" }}>non-facility (office/community)</option>
+        <option value="facility" {{ "selected" if item.va_setting == "facility" }}>facility (hospital outpatient)</option>
+      </select></div>
     <div><label>Pricing source</label><input name="pricing_source" id="f_pricing_source" value="{{ item.pricing_source }}"></div>
     <div><label>Percentile</label><input name="percentile" id="f_percentile" value="{{ item.percentile if item.percentile is not none else '' }}"></div>
   </div>

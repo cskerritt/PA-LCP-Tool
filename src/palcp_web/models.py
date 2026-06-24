@@ -162,6 +162,9 @@ class CareItemRow(Base, TimestampMixin):
     growth_key: Mapped[str] = mapped_column(String(64), default="medical_services")
     medical_foundation: Mapped[str] = mapped_column(Text, default="")
     notes: Mapped[str] = mapped_column(Text, default="")
+    # VA professional charges differ by care setting; "non_facility" (community/
+    # office) by default, "facility" (hospital outpatient) optional per item.
+    va_setting: Mapped[str] = mapped_column(String(16), default="non_facility")
 
     case: Mapped["Case"] = relationship(back_populates="items")
 

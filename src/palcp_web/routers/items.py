@@ -54,6 +54,7 @@ def _row_from_form(form: dict, case_id: int, sort_order: int) -> CareItemRow:
         growth_key=clean(form.get("growth_key")) or "medical_services",
         medical_foundation=clean(form.get("medical_foundation")),
         notes=clean(form.get("notes")),
+        va_setting=clean(form.get("va_setting")) or "non_facility",
     )
 
 
@@ -118,7 +119,7 @@ async def update_item(case_id: int, item_id: int, request: Request,
         "percentile", "geographic_basis", "retrieval_date", "unit_cost",
         "units_per_occurrence", "frequency_per_year", "every_n_years", "one_time",
         "one_time_age", "start_age", "end_age", "growth_key", "medical_foundation",
-        "notes",
+        "notes", "va_setting",
     ):
         setattr(row, field, getattr(updated, field))
     record_audit(db, user_id=user.id, case_id=case.id, entity="item",
